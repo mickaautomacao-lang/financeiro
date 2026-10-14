@@ -28,6 +28,8 @@ export interface Database {
           icon: string;
           budget_limit: number;
           category_type?: 'fixed' | 'credit_card' | 'variable';
+          due_day?: number | null;
+          closing_day?: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -39,6 +41,8 @@ export interface Database {
           icon?: string;
           budget_limit?: number;
           category_type?: 'fixed' | 'credit_card' | 'variable';
+          due_day?: number | null;
+          closing_day?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -50,6 +54,8 @@ export interface Database {
           icon?: string;
           budget_limit?: number;
           category_type?: 'fixed' | 'credit_card' | 'variable';
+          due_day?: number | null;
+          closing_day?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -268,6 +274,7 @@ export interface CategoryInstallment {
   current_installment: number;
   due_day?: number;
   start_date: string;
+  purchase_date?: string | null;
   status: 'active' | 'completed' | 'paused';
   notes?: string | null;
   created_at: string;

@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, budget_limit, color, icon, category_type } = body;
+    const { name, budget_limit, color, icon, category_type, due_day, closing_day } = body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
@@ -34,6 +34,8 @@ export async function POST(request: Request) {
 
     const trimmedName = name.trim();
     const budgetLimitNumber = parseFloat(String(budget_limit || 0));
+    const dueDayNum = due_day !== undefined && due_day !== null && due_day !== '' ? parseInt(String(due_day)) : null;
+    const closingDayNum = closing_day !== undefined && closing_day !== null && closing_day !== '' ? parseInt(String(closing_day)) : null;
 
     const { data, error } = await supabaseAdmin
       .from('categories')
@@ -44,6 +46,8 @@ export async function POST(request: Request) {
         color: color || '#A3E635',
         icon: icon || 'Tag',
         category_type: category_type || 'variable',
+        due_day: dueDayNum,
+        closing_day: closingDayNum,
       })
       .select()
       .single();
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, budget_limit, color, icon, category_type } = body;
+    const { id, name, budget_limit, color, icon, category_type, due_day, closing_day } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -88,6 +92,12 @@ export async function PUT(request: Request) {
     if (color !== undefined) updates.color = color;
     if (icon !== undefined) updates.icon = icon;
     if (category_type !== undefined) updates.category_type = category_type;
+    if (due_day !== undefined) {
+      updates.due_day = due_day ? parseInt(String(due_day)) : null;
+    }
+    if (closing_day !== undefined) {
+      updates.closing_day = closing_day ? parseInt(String(closing_day)) : null;
+    }
 
     const { data, error } = await supabaseAdmin
       .from('categories')

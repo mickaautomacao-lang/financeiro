@@ -38,7 +38,8 @@ export function CategoryInstallmentsModal({
   const [installmentAmount, setInstallmentAmount] = useState('');
   const [totalInstallments, setTotalInstallments] = useState('6');
   const [currentInstallment, setCurrentInstallment] = useState('1');
-  const [dueDay, setDueDay] = useState('10');
+  const [dueDay, setDueDay] = useState(category?.due_day ? String(category.due_day) : '10');
+  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
 
@@ -157,6 +158,7 @@ export function CategoryInstallmentsModal({
           current_installment: parseInt(currentInstallment) || 1,
           due_day: parseInt(dueDay) || 10,
           start_date: startDate,
+          purchase_date: purchaseDate,
           notes: notes.trim() || null,
         }),
       });
@@ -265,6 +267,13 @@ export function CategoryInstallmentsModal({
                 <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
                   Cartão / Parcelado
                 </span>
+                {(category.closing_day || category.due_day) && (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-graphite-800 text-graphite-300 border border-border">
+                    {category.closing_day && `Fecha dia ${category.closing_day}`}
+                    {category.closing_day && category.due_day && ' • '}
+                    {category.due_day && `Vence dia ${category.due_day}`}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-graphite-400 mt-0.5">
                 Controle de compras individuais, parcelas e projeção de alívio
@@ -516,15 +525,30 @@ export function CategoryInstallmentsModal({
                   />
                 </div>
 
+                {/* Data da Compra */}
+                <div>
+                  <label className="block text-[11px] font-medium text-graphite-300 mb-1">
+                    Data da Compra *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={purchaseDate}
+                    onChange={(e) => setPurchaseDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon font-mono"
+                  />
+                </div>
+
                 {/* Dia do Vencimento */}
                 <div>
                   <label className="block text-[11px] font-medium text-graphite-300 mb-1">
-                    Dia do Vencimento (1 a 31)
+                    Dia do Vencimento (1 a 31) *
                   </label>
                   <input
                     type="number"
                     min="1"
                     max="31"
+                    required
                     value={dueDay}
                     onChange={(e) => setDueDay(e.target.value)}
                     placeholder="Ex: 10"
@@ -596,19 +620,26 @@ export function CategoryInstallmentsModal({
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-graphite-400 mt-1">
+                        <div className="flex flex-wrap items-center gap-2.5 text-xs text-graphite-400 mt-1">
                           <span className="font-mono text-white font-medium">
                             {formatCurrency(inst.installment_amount)}/mês
                           </span>
                           <span>•</span>
-                          <span className="flex items-center gap-1 font-mono">
+                          <span className="flex items-center gap-1 font-mono text-graphite-300">
                             <Clock className="w-3 h-3 text-graphite-400" />
-                            Parcela {inst.current_installment} de {inst.total_installments}
+                            {inst.current_installment} de {inst.total_installments}
                           </span>
                           <span>•</span>
-                          <span>Vence todo dia {inst.due_day || 10}</span>
+                          <span className="flex items-center gap-1 text-[11px] font-mono text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
+                            <Calendar className="w-2.5 h-2.5" />
+                            Compra: {new Date((inst.purchase_date || inst.start_date || '2026-10-14') + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </span>
                           <span>•</span>
-                          <span className="text-graphite-300">
+                          <span className="text-[11px] font-mono text-neon bg-neon/10 px-1.5 py-0.5 rounded border border-neon/20">
+                            Vence dia {inst.due_day || 10}
+                          </span>
+                          <span>•</span>
+                          <span className="text-graphite-400">
                             Faltam {remaining} {remaining === 1 ? 'mês' : 'meses'}
                           </span>
                         </div>

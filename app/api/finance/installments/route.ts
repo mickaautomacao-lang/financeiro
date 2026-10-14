@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       current_installment = 1,
       due_day = 10,
       start_date,
+      purchase_date,
       notes,
     } = body;
 
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     const totalInst = parseInt(String(total_installments)) || 1;
     const currentInst = parseInt(String(current_installment)) || 1;
     const dueDayNum = parseInt(String(due_day)) || 10;
+    const resolvedPurchaseDate = purchase_date || start_date || new Date().toISOString().split('T')[0];
 
     const { data, error } = await supabaseAdmin
       .from('category_installments')
@@ -82,7 +84,8 @@ export async function POST(req: NextRequest) {
         total_installments: Math.max(1, totalInst),
         current_installment: Math.max(1, Math.min(currentInst, totalInst)),
         due_day: Math.min(31, Math.max(1, dueDayNum)),
-        start_date: start_date || new Date().toISOString().split('T')[0],
+        start_date: start_date || resolvedPurchaseDate,
+        purchase_date: resolvedPurchaseDate,
         status: currentInst >= totalInst ? 'completed' : 'active',
         notes: notes ? notes.trim() : null,
       })
@@ -113,6 +116,7 @@ export async function PUT(req: NextRequest) {
       current_installment,
       due_day,
       start_date,
+      purchase_date,
       status,
       notes,
     } = body;
@@ -146,6 +150,7 @@ export async function PUT(req: NextRequest) {
       if (!isNaN(val) && val >= 1 && val <= 31) updates.due_day = val;
     }
     if (start_date !== undefined) updates.start_date = start_date;
+    if (purchase_date !== undefined) updates.purchase_date = purchase_date;
     if (status !== undefined) updates.status = status;
     if (notes !== undefined) updates.notes = notes;
 

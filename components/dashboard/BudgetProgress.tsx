@@ -180,7 +180,12 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
                     </strong>
                   </span>
 
-                  <span className="truncate text-right">
+                  <span className="truncate text-right flex items-center gap-1.5 justify-end">
+                    {categoryData?.due_day && (
+                      <span className="text-[10px] text-graphite-500 font-mono">
+                        vence d.{categoryData.due_day} •
+                      </span>
+                    )}
                     {plannedAmount > 0 ? (
                       <>
                         Teto:{' '}

@@ -282,9 +282,19 @@ function BudgetsContent() {
                         <h4 className="text-sm font-semibold text-white truncate" title={cat.name}>
                           {cat.name}
                         </h4>
-                        <p className="text-xs text-graphite-400 font-mono mt-0.5">
-                          Teto: {formatCurrency(limit)}
-                        </p>
+                        <div className="flex items-center justify-between text-xs text-graphite-400 font-mono mt-0.5">
+                          <span>Teto: {formatCurrency(limit)}</span>
+                          {cat.category_type === 'fixed' && (
+                            <span className="text-[11px] text-blue-300">
+                              Vence dia {cat.due_day || 10}
+                            </span>
+                          )}
+                          {cat.category_type === 'credit_card' && (
+                            <span className="text-[10px] text-purple-300">
+                              Fecha dia {cat.closing_day || 5} • Vence dia {cat.due_day || 15}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Bloco de Parcelas / Sub-compras */}

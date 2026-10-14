@@ -73,12 +73,12 @@ O **FinPulse** é um ecossistema completo de gestão financeira pessoal e empres
 
 ### Etapa 5: Categorias Fixas vs. Cartão de Crédito e Controle de Sub-Parcelas
 - **Distinção Tipológica de Categorias:**
-  - `fixed` (Custos Fixos Recorrentes: Escola, Casa/Água/Luz, Internet Tim).
-  - `credit_card` (Cartões de Crédito e Parcelados: Jarbas, Cartão Vadir, Moto Edison, Romario).
+  - `fixed` (Custos Fixos Recorrentes: Escola, Casa/Água/Luz, Internet Tim) — possui **Dia do Vencimento Mensal** configurável.
+  - `credit_card` (Cartões de Crédito e Parcelados: Jarbas, Cartão Vadir, Moto Edison, Romario) — possui **Dia de Fechamento / Melhor Dia de Compra** e **Dia de Vencimento da Fatura**.
   - `variable` (Despesas variáveis do dia a dia: Mercado, Transporte, Lazer).
 - **Tabela Relacional `category_installments`:**
   - Armazena compras parceladas vinculadas a uma categoria (`category_id`).
-  - Campos: `description`, `installment_amount`, `total_installments`, `current_installment`, `due_day`, `start_date`, `status` (`active`, `completed`).
+  - Campos: `description`, `installment_amount`, `total_installments`, `current_installment`, `due_day`, `start_date`, `purchase_date`, `status` (`active`, `completed`).
 - **Múltiplas Compras na Mesma Categoria (Exemplo Real: Jarbas):**
   - Permite acumular compras na mesma fatura/pessoa (ex: R$ 500 em 6x + R$ 300 em 3x = R$ 800/mês).
   - Motor de inteligência que detecta qual compra encerra primeiro, emitindo aviso de alívio financeiro (ex: R$ 300 encerra em 3 meses, reduzindo o compromisso mensal para R$ 500/mês).
@@ -86,8 +86,8 @@ O **FinPulse** é um ecossistema completo de gestão financeira pessoal e empres
 - **Abatimento e Quitação em 1 Clique:**
   - Endpoint `POST /api/finance/installments/pay` avança a parcela, marca como concluída quando atinge o total e registra a saída automaticamente no extrato contábil.
 - **Interface e Navegação:**
-  - Modal dedicado `CategoryInstallmentsModal.tsx` com visualização de compras ativas, histórico de quitadas e formulário de nova compra.
-  - Abas de filtro na página `/budgets` (Todas, Cartão / Parcelas, Fixas, Variáveis).
+  - Modal dedicado `CategoryInstallmentsModal.tsx` com visualização de compras ativas (mostrando data da compra e vencimento), histórico de quitadas e formulário com seleção de data de compra e vencimento.
+  - Abas de filtro na página `/budgets` (Todas, Cartão / Parcelas, Fixas, Variáveis) exibindo data de fechamento e vencimento diretamente nos cards.
   - Botão rápido de parcelas na barra `BudgetProgress.tsx`.
 
 ---

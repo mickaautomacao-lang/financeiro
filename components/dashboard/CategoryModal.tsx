@@ -20,6 +20,7 @@ import {
   Check,
   CreditCard,
   Repeat,
+  Calendar,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { Category } from '@/types/database.types';
@@ -73,6 +74,8 @@ export function CategoryModal({
   const [color, setColor] = useState('#A3E635');
   const [icon, setIcon] = useState('Tag');
   const [categoryType, setCategoryType] = useState<'variable' | 'fixed' | 'credit_card'>('variable');
+  const [dueDay, setDueDay] = useState('10');
+  const [closingDay, setClosingDay] = useState('5');
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,12 +89,16 @@ export function CategoryModal({
       setColor(categoryToEdit.color || '#A3E635');
       setIcon(categoryToEdit.icon || 'Tag');
       setCategoryType(categoryToEdit.category_type || 'variable');
+      setDueDay(categoryToEdit.due_day ? String(categoryToEdit.due_day) : '10');
+      setClosingDay(categoryToEdit.closing_day ? String(categoryToEdit.closing_day) : '5');
     } else {
       setName('');
       setBudgetLimit('');
       setColor('#A3E635');
       setIcon('Tag');
       setCategoryType('variable');
+      setDueDay('10');
+      setClosingDay('5');
     }
     setError(null);
   }, [categoryToEdit, isOpen]);
@@ -113,14 +120,34 @@ export function CategoryModal({
       return;
     }
 
+    const numericDueDay = dueDay ? parseInt(dueDay) : null;
+    const numericClosingDay = closingDay ? parseInt(closingDay) : null;
+
     setIsLoading(true);
 
     try {
       const url = '/api/finance/categories';
       const method = isEditing ? 'PUT' : 'POST';
       const payload = isEditing
-        ? { id: categoryToEdit!.id, name: name.trim(), budget_limit: numericLimit, color, icon, category_type: categoryType }
-        : { name: name.trim(), budget_limit: numericLimit, color, icon, category_type: categoryType };
+        ? {
+            id: categoryToEdit!.id,
+            name: name.trim(),
+            budget_limit: numericLimit,
+            color,
+            icon,
+            category_type: categoryType,
+            due_day: numericDueDay,
+            closing_day: numericClosingDay,
+          }
+        : {
+            name: name.trim(),
+            budget_limit: numericLimit,
+            color,
+            icon,
+            category_type: categoryType,
+            due_day: numericDueDay,
+            closing_day: numericClosingDay,
+          };
 
       const res = await fetch(url, {
         method,
@@ -215,27 +242,42 @@ export function CategoryModal({
 
           {/* Preview da Categoria */}
           <div className="p-3 bg-graphite-900/80 rounded-lg border border-border/70 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span
-                className="w-3.5 h-3.5 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">
-                  {name || 'Nome da Categoria'}
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider bg-graphite-800 text-graphite-300 border border-border">
-                  {categoryType === 'fixed'
-                    ? 'Fixo'
-                    : categoryType === 'credit_card'
-                    ? 'Cartão / Parcelas'
-                    : 'Variável'}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="w-3.5 h-3.5 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-white">
+                    {name || 'Nome da Categoria'}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider bg-graphite-800 text-graphite-300 border border-border">
+                    {categoryType === 'fixed'
+                      ? 'Fixo'
+                      : categoryType === 'credit_card'
+                      ? 'Cartão / Parcelas'
+                      : 'Variável'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs font-mono">
+                {categoryType === 'fixed' && dueDay && (
+                  <span className="text-[11px] text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                    Vence dia {dueDay}
+                  </span>
+                )}
+                {categoryType === 'credit_card' && (
+                  <span className="text-[11px] text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                    Fecha dia {closingDay || '5'} • Vence dia {dueDay || '15'}
+                  </span>
+                )}
+                <span className="text-neon font-medium">
+                  Teto: {formatCurrency(parseFloat(budgetLimit.replace(',', '.')) || 0)}
                 </span>
               </div>
             </div>
-            <span className="text-xs font-mono text-neon font-medium">
-              Teto: {formatCurrency(parseFloat(budgetLimit.replace(',', '.')) || 0)}
-            </span>
           </div>
 
           {/* Tipo de Categoria */}
@@ -314,6 +356,90 @@ export function CategoryModal({
               className="w-full px-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-colors"
             />
           </div>
+
+          {/* Campos Específicos: Dia da Compra / Fechamento & Dia do Vencimento */}
+          {categoryType === 'fixed' && (
+            <div className="p-3.5 bg-blue-500/10 border border-blue-500/25 rounded-xl space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-300">
+                <Calendar className="w-3.5 h-3.5" />
+                Vencimento do Custo Fixo
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-graphite-300 mb-1">
+                  Dia do Vencimento Mensal (1 a 31)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs text-graphite-400">Dia</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={dueDay}
+                    onChange={(e) => setDueDay(e.target.value)}
+                    placeholder="10"
+                    className="w-full pl-10 pr-3 py-2 bg-graphite-900 border border-border rounded-lg text-xs text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-graphite-400 mt-1">
+                  Ex: Dia 10 (Escola vence dia 10, Energia dia 15, Água dia 20...)
+                </p>
+              </div>
+            </div>
+          )}
+
+          {categoryType === 'credit_card' && (
+            <div className="p-3.5 bg-purple-500/10 border border-purple-500/25 rounded-xl space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-300">
+                <Calendar className="w-3.5 h-3.5" />
+                Ciclo do Cartão & Fatura (Compra x Vencimento)
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Dia da Compra / Fechamento */}
+                <div>
+                  <label className="block text-[11px] font-medium text-graphite-300 mb-1">
+                    Dia de Fechamento / Melhor Compra
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-xs text-graphite-400">Dia</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={closingDay}
+                      onChange={(e) => setClosingDay(e.target.value)}
+                      placeholder="5"
+                      className="w-full pl-10 pr-3 py-2 bg-graphite-900 border border-border rounded-lg text-xs text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon font-mono"
+                    />
+                  </div>
+                  <p className="text-[10px] text-graphite-400 mt-0.5">
+                    Virada da fatura / melhor dia
+                  </p>
+                </div>
+
+                {/* Dia de Vencimento */}
+                <div>
+                  <label className="block text-[11px] font-medium text-graphite-300 mb-1">
+                    Dia de Vencimento da Fatura
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-xs text-graphite-400">Dia</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={dueDay}
+                      onChange={(e) => setDueDay(e.target.value)}
+                      placeholder="15"
+                      className="w-full pl-10 pr-3 py-2 bg-graphite-900 border border-border rounded-lg text-xs text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon font-mono"
+                    />
+                  </div>
+                  <p className="text-[10px] text-graphite-400 mt-0.5">
+                    Data limite de pagamento
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Teto Orçamentário */}
           <div>
