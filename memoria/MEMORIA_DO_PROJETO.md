@@ -1,8 +1,9 @@
 # MEMÓRIA DO PROJETO: FinPulse — Controle Financeiro Pessoal
 
-> **Data de Atualização:** 13 de Outubro de 2026  
-> **Status Atual:** Banco de Dados Supabase Conectado • Tabelas, RLS, Triggers e Views Criados  
+> **Data de Atualização:** 14 de Outubro de 2026  
+> **Status Atual:** Em Produção (Vercel) • Banco Supabase Conectado • Deploy 100% Ativo  
 > **Ambiente de Desenvolvimento:** Next.js 15 (App Router), Supabase (PostgreSQL - Ref: `yjzmheubgqhlmuprbabp`), n8n, Telegram Bot API  
+> **URL de Produção (Vercel):** `https://financeiro-nu-sage.vercel.app`  
 > **URL do Supabase:** `https://yjzmheubgqhlmuprbabp.supabase.co`  
 > **Repositório GitHub:** `https://github.com/mickaautomacao-lang/financeiro.git` (Branch: `main`)  
 
