@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, budget_limit, color, icon, category_type, due_day, closing_day } = body;
+    const { name, budget_limit, color, icon, category_type, category_nature, due_day, closing_day } = body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
         color: color || '#A3E635',
         icon: icon || 'Tag',
         category_type: category_type || 'variable',
+        category_nature: category_nature || 'expense',
         due_day: dueDayNum,
         closing_day: closingDayNum,
       })
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, budget_limit, color, icon, category_type, due_day, closing_day } = body;
+    const { id, name, budget_limit, color, icon, category_type, category_nature, due_day, closing_day } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -92,6 +93,7 @@ export async function PUT(request: Request) {
     if (color !== undefined) updates.color = color;
     if (icon !== undefined) updates.icon = icon;
     if (category_type !== undefined) updates.category_type = category_type;
+    if (category_nature !== undefined) updates.category_nature = category_nature;
     if (due_day !== undefined) {
       updates.due_day = due_day ? parseInt(String(due_day)) : null;
     }

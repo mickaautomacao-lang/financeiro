@@ -69,6 +69,7 @@ export function CategoryModal({
   categoryToEdit,
   onSuccess,
 }: CategoryModalProps) {
+  const [categoryNature, setCategoryNature] = useState<'expense' | 'income'>('expense');
   const [name, setName] = useState('');
   const [budgetLimit, setBudgetLimit] = useState('');
   const [color, setColor] = useState('#A3E635');
@@ -84,14 +85,16 @@ export function CategoryModal({
 
   useEffect(() => {
     if (categoryToEdit) {
+      setCategoryNature(categoryToEdit.category_nature === 'income' ? 'income' : 'expense');
       setName(categoryToEdit.name || '');
       setBudgetLimit(categoryToEdit.budget_limit ? String(categoryToEdit.budget_limit) : '');
-      setColor(categoryToEdit.color || '#A3E635');
-      setIcon(categoryToEdit.icon || 'Tag');
+      setColor(categoryToEdit.color || (categoryToEdit.category_nature === 'income' ? '#10B981' : '#A3E635'));
+      setIcon(categoryToEdit.icon || (categoryToEdit.category_nature === 'income' ? 'Briefcase' : 'Tag'));
       setCategoryType(categoryToEdit.category_type || 'variable');
       setDueDay(categoryToEdit.due_day ? String(categoryToEdit.due_day) : '10');
       setClosingDay(categoryToEdit.closing_day ? String(categoryToEdit.closing_day) : '5');
     } else {
+      setCategoryNature('expense');
       setName('');
       setBudgetLimit('');
       setColor('#A3E635');
@@ -136,8 +139,9 @@ export function CategoryModal({
             color,
             icon,
             category_type: categoryType,
+            category_nature: categoryNature,
             due_day: numericDueDay,
-            closing_day: numericClosingDay,
+            closing_day: categoryNature === 'income' ? null : numericClosingDay,
           }
         : {
             name: name.trim(),
@@ -145,8 +149,9 @@ export function CategoryModal({
             color,
             icon,
             category_type: categoryType,
+            category_nature: categoryNature,
             due_day: numericDueDay,
-            closing_day: numericClosingDay,
+            closing_day: categoryNature === 'income' ? null : numericClosingDay,
           };
 
       const res = await fetch(url, {
@@ -215,12 +220,14 @@ export function CategoryModal({
             </div>
             <div>
               <h2 className="text-base font-semibold text-white">
-                {isEditing ? 'Editar Categoria & Orçamento' : 'Nova Categoria & Orçamento'}
+                {isEditing
+                  ? `Editar Categoria (${categoryNature === 'income' ? 'Receita' : 'Despesa'})`
+                  : `Nova Categoria (${categoryNature === 'income' ? 'Receita' : 'Despesa'})`}
               </h2>
               <p className="text-xs text-graphite-400">
-                {isEditing
-                  ? 'Atualize o tipo, nome, ícone ou ajuste o teto mensal da regra de 80%'
-                  : 'Crie uma nova categoria para agrupar despesas e definir tetos'}
+                {categoryNature === 'income'
+                  ? 'Cadastre fontes de renda fixa, freelas e previsões financeiras'
+                  : 'Crie e configure contas, tetos de gastos e datas de vencimento'}
               </p>
             </div>
           </div>
@@ -240,106 +247,202 @@ export function CategoryModal({
             </div>
           )}
 
-          {/* Preview da Categoria */}
-          <div className="p-3 bg-graphite-900/80 rounded-lg border border-border/70 flex items-center justify-between">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="w-3.5 h-3.5 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white">
-                    {name || 'Nome da Categoria'}
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider bg-graphite-800 text-graphite-300 border border-border">
-                    {categoryType === 'fixed'
-                      ? 'Fixo'
-                      : categoryType === 'credit_card'
-                      ? 'Cartão / Parcelas'
-                      : 'Variável'}
-                  </span>
-                </div>
-              </div>
+          {/* Seletor de Natureza: Despesa vs Receita */}
+          <div>
+            <label className="block text-xs font-medium text-graphite-300 mb-1.5">
+              Natureza da Categoria <span className="text-expense">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryNature('expense');
+                  if (color === '#10B981') setColor('#A3E635');
+                  if (icon === 'Briefcase') setIcon('Tag');
+                }}
+                className={`p-2.5 rounded-lg border text-center transition-all flex items-center justify-center gap-2 ${
+                  categoryNature === 'expense'
+                    ? 'border-expense bg-expense/15 text-white font-semibold shadow-sm'
+                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                }`}
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-expense" />
+                <span className="text-xs">Despesa (Saída)</span>
+              </button>
 
-              <div className="flex items-center gap-3 text-xs font-mono">
-                {categoryType === 'fixed' && dueDay && (
-                  <span className="text-[11px] text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-                    Vence dia {dueDay}
-                  </span>
-                )}
-                {categoryType === 'credit_card' && (
-                  <span className="text-[11px] text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
-                    Fecha dia {closingDay || '5'} • Vence dia {dueDay || '15'}
-                  </span>
-                )}
-                <span className="text-neon font-medium">
-                  Teto: {formatCurrency(parseFloat(budgetLimit.replace(',', '.')) || 0)}
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryNature('income');
+                  if (color === '#A3E635') setColor('#10B981');
+                  if (icon === 'Tag') setIcon('Briefcase');
+                }}
+                className={`p-2.5 rounded-lg border text-center transition-all flex items-center justify-center gap-2 ${
+                  categoryNature === 'income'
+                    ? 'border-emerald-500 bg-emerald-500/15 text-white font-semibold shadow-sm'
+                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                }`}
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                <span className="text-xs">Receita (Entrada)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Preview da Categoria */}
+          <div className="p-3 bg-graphite-900/80 rounded-lg border border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span
+                className="w-3.5 h-3.5 rounded-full shrink-0"
+                style={{ backgroundColor: color }}
+              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-white">
+                  {name || 'Nome da Categoria'}
+                </span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider border ${
+                    categoryNature === 'income'
+                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                      : 'bg-graphite-800 text-graphite-300 border-border'
+                  }`}
+                >
+                  {categoryNature === 'income' ? 'Receita' : 'Despesa'}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider bg-graphite-800 text-graphite-300 border border-border">
+                  {categoryNature === 'income'
+                    ? categoryType === 'fixed'
+                      ? 'Entrada Fixa'
+                      : 'Freelance / Variável'
+                    : categoryType === 'fixed'
+                    ? 'Fixo Mensal'
+                    : categoryType === 'credit_card'
+                    ? 'Cartão / Parcelas'
+                    : 'Variável'}
                 </span>
               </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs font-mono shrink-0">
+              {dueDay && (
+                <span className="text-[11px] text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                  {categoryNature === 'income' ? `Cai dia ${dueDay}` : `Vence dia ${dueDay}`}
+                </span>
+              )}
+              {categoryNature === 'expense' && categoryType === 'credit_card' && (
+                <span className="text-[11px] text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                  Fecha {closingDay || '5'}
+                </span>
+              )}
+              <span className={categoryNature === 'income' ? 'text-emerald-400 font-medium' : 'text-neon font-medium'}>
+                {categoryNature === 'income' ? 'Previsão: ' : 'Teto: '}
+                {formatCurrency(parseFloat(budgetLimit.replace(',', '.')) || 0)}
+              </span>
             </div>
           </div>
 
           {/* Tipo de Categoria */}
           <div>
             <label className="block text-xs font-medium text-graphite-300 mb-1.5">
-              Tipo da Conta / Categoria <span className="text-expense">*</span>
+              {categoryNature === 'income' ? 'Subtipo da Receita' : 'Tipo da Despesa / Conta'}{' '}
+              <span className="text-expense">*</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setCategoryType('variable')}
-                className={`p-2.5 rounded-lg border text-left transition-all ${
-                  categoryType === 'variable'
-                    ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
-                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
-                  <ShoppingBag className="w-3.5 h-3.5 text-neon" />
-                  Variável
-                </div>
-                <p className="text-[10px] text-graphite-400 leading-tight">
-                  Dia a dia, mercado e gastos livres
-                </p>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => setCategoryType('fixed')}
-                className={`p-2.5 rounded-lg border text-left transition-all ${
-                  categoryType === 'fixed'
-                    ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
-                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
-                  <Repeat className="w-3.5 h-3.5 text-blue-400" />
-                  Fixo Mensal
-                </div>
-                <p className="text-[10px] text-graphite-400 leading-tight">
-                  Escola, água, energia, internet
-                </p>
-              </button>
+            {categoryNature === 'income' ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCategoryType('fixed')}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    categoryType === 'fixed'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-white shadow-sm'
+                      : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
+                    Entrada Fixa
+                  </div>
+                  <p className="text-[10px] text-graphite-400 leading-tight">
+                    Salário CLT, Pró-Labore, Aposentadoria, Aluguéis
+                  </p>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setCategoryType('credit_card')}
-                className={`p-2.5 rounded-lg border text-left transition-all ${
-                  categoryType === 'credit_card'
-                    ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
-                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
-                  <CreditCard className="w-3.5 h-3.5 text-purple-400" />
-                  Cartão / Parcelas
-                </div>
-                <p className="text-[10px] text-graphite-400 leading-tight">
-                  Compras em 3x, 6x, 12x (Jarbas, Vadir...)
-                </p>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setCategoryType('variable')}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    categoryType === 'variable' || categoryType === 'credit_card'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-white shadow-sm'
+                      : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Freelance & Variável
+                  </div>
+                  <p className="text-[10px] text-graphite-400 leading-tight">
+                    Projetos extras, Freelas, Comissões e Dividendos
+                  </p>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCategoryType('variable')}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    categoryType === 'variable'
+                      ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
+                      : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                    <ShoppingBag className="w-3.5 h-3.5 text-neon" />
+                    Variável
+                  </div>
+                  <p className="text-[10px] text-graphite-400 leading-tight">
+                    Dia a dia, mercado e gastos livres
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCategoryType('fixed')}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    categoryType === 'fixed'
+                      ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
+                      : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                    <Repeat className="w-3.5 h-3.5 text-blue-400" />
+                    Fixo Mensal
+                  </div>
+                  <p className="text-[10px] text-graphite-400 leading-tight">
+                    Escola, água, energia, internet
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCategoryType('credit_card')}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    categoryType === 'credit_card'
+                      ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
+                      : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                    <CreditCard className="w-3.5 h-3.5 text-purple-400" />
+                    Cartão / Parcelas
+                  </div>
+                  <p className="text-[10px] text-graphite-400 leading-tight">
+                    Compras em 3x, 6x, 12x (Jarbas, Vadir...)
+                  </p>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Nome */}
@@ -352,13 +455,47 @@ export function CategoryModal({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Assinaturas de Streaming, Delivery, Manutenção Carro..."
+              placeholder={
+                categoryNature === 'income'
+                  ? 'Ex: Salário Empresa X, Freelance Design, Dividendos...'
+                  : 'Ex: Assinaturas de Streaming, Delivery, Manutenção Carro...'
+              }
               className="w-full px-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-colors"
             />
           </div>
 
-          {/* Campos Específicos: Dia da Compra / Fechamento & Dia do Vencimento */}
-          {categoryType === 'fixed' && (
+          {/* Datas para Receita */}
+          {categoryNature === 'income' && (
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
+                <Calendar className="w-3.5 h-3.5" />
+                Previsão de Recebimento Mensal
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-graphite-300 mb-1">
+                  Dia do Mês Previsto para Recebimento (1 a 31)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs text-graphite-400">Dia</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={dueDay}
+                    onChange={(e) => setDueDay(e.target.value)}
+                    placeholder="5"
+                    className="w-full pl-10 pr-3 py-2 bg-graphite-900 border border-border rounded-lg text-xs text-white placeholder-graphite-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-graphite-400 mt-1">
+                  Ex: Dia 5 (Salário), Dia 15 (Adiantamento/Freela), Dia 20 (Aluguéis recebidos)
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Campos Específicos para Despesas: Fixo e Cartão */}
+          {categoryNature === 'expense' && categoryType === 'fixed' && (
             <div className="p-3.5 bg-blue-500/10 border border-blue-500/25 rounded-xl space-y-2 animate-in fade-in duration-200">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-300">
                 <Calendar className="w-3.5 h-3.5" />
@@ -387,7 +524,7 @@ export function CategoryModal({
             </div>
           )}
 
-          {categoryType === 'credit_card' && (
+          {categoryNature === 'expense' && categoryType === 'credit_card' && (
             <div className="p-3.5 bg-purple-500/10 border border-purple-500/25 rounded-xl space-y-3 animate-in fade-in duration-200">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-300">
                 <Calendar className="w-3.5 h-3.5" />
@@ -441,14 +578,18 @@ export function CategoryModal({
             </div>
           )}
 
-          {/* Teto Orçamentário */}
+          {/* Teto Orçamentário ou Previsão de Renda */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-medium text-graphite-300">
-                Teto Orçamentário Mensal (R$)
+                {categoryNature === 'income'
+                  ? 'Previsão / Meta Mensal de Renda (R$)'
+                  : 'Teto Orçamentário Mensal (R$)'}
               </label>
               <span className="text-[11px] text-graphite-400">
-                Dispara alerta Telegram a 80%
+                {categoryNature === 'income'
+                  ? 'Meta esperada no mês'
+                  : 'Dispara alerta Telegram a 80%'}
               </span>
             </div>
             <div className="relative">
@@ -461,8 +602,12 @@ export function CategoryModal({
                 min="0"
                 value={budgetLimit}
                 onChange={(e) => setBudgetLimit(e.target.value)}
-                placeholder="0,00 (0 para sem limite definido)"
-                className="w-full pl-10 pr-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-colors font-mono"
+                placeholder="0,00"
+                className={`w-full pl-10 pr-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white placeholder-graphite-500 focus:outline-none transition-colors font-mono ${
+                  categoryNature === 'income'
+                    ? 'focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
+                    : 'focus:border-neon focus:ring-1 focus:ring-neon'
+                }`}
               />
             </div>
           </div>

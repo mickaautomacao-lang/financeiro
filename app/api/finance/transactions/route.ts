@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
       date,
       payment_method,
       status = 'completed',
+      entry_subtype = 'variable',
+      installments_count = 1,
+      installment_number = 1,
     } = body;
 
     if (!amount || !type || !description) {
@@ -49,6 +52,8 @@ export async function POST(req: NextRequest) {
             user_id: '00000000-0000-0000-0000-000000000000',
             name: category_name.trim(),
             budget_limit: 1000.0,
+            category_nature: type === 'income' ? 'income' : 'expense',
+            category_type: entry_subtype || 'variable',
           })
           .select('id')
           .single();
@@ -69,6 +74,9 @@ export async function POST(req: NextRequest) {
         payment_method: payment_method || 'Pix',
         status,
         source: 'manual_web',
+        entry_subtype: entry_subtype || 'variable',
+        installments_count: parseInt(String(installments_count)) || 1,
+        installment_number: parseInt(String(installment_number)) || 1,
       })
       .select(`
         *,

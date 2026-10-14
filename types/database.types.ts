@@ -28,6 +28,7 @@ export interface Database {
           icon: string;
           budget_limit: number;
           category_type?: 'fixed' | 'credit_card' | 'variable';
+          category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
           closing_day?: number | null;
           created_at: string;
@@ -41,6 +42,7 @@ export interface Database {
           icon?: string;
           budget_limit?: number;
           category_type?: 'fixed' | 'credit_card' | 'variable';
+          category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
           closing_day?: number | null;
           created_at?: string;
@@ -54,6 +56,7 @@ export interface Database {
           icon?: string;
           budget_limit?: number;
           category_type?: 'fixed' | 'credit_card' | 'variable';
+          category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
           closing_day?: number | null;
           created_at?: string;
@@ -80,6 +83,9 @@ export interface Database {
           description: string;
           payment_method: string | null;
           source: string | null;
+          entry_subtype?: string | null;
+          installments_count?: number | null;
+          installment_number?: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -94,6 +100,9 @@ export interface Database {
           description: string;
           payment_method?: string | null;
           source?: string | null;
+          entry_subtype?: string | null;
+          installments_count?: number | null;
+          installment_number?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -108,6 +117,9 @@ export interface Database {
           description?: string;
           payment_method?: string | null;
           source?: string | null;
+          entry_subtype?: string | null;
+          installments_count?: number | null;
+          installment_number?: number | null;
           created_at?: string;
           updated_at?: string;
         };
