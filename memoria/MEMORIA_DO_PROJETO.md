@@ -28,6 +28,7 @@ O sistema opera sobre uma arquitetura híbrida:
 | **Design System** | **Shadcn UI (Customizado)** | Componentes atômicos com estados de foco, hover e acessibilidade. |
 | **Ícones** | **Lucide Icons** | Iconografia consistente em toda a aplicação. |
 | **Visualização de Dados** | **Recharts** | Gráficos de área (fluxo de caixa) e rosca (categorias). |
+| **Hospedagem & Analytics**| **Vercel** (`@vercel/analytics`, `@vercel/speed-insights`) | Telemetria de performance, Core Web Vitals e hosting Serverless. |
 | **Banco de Dados** | **Supabase (PostgreSQL)** | Persistência relacional, RLS multi-tenant, views analíticas. |
 | **Orquestrador de Fluxos**| **n8n** | Webhooks para Google Planilhas e agendamento Cron de alertas. |
 | **Notificações** | **Telegram Bot API** | Alertas formatados em HTML com emojis para decisões rápidas. |
