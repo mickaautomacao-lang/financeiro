@@ -1,9 +1,10 @@
 # MEMÓRIA DO PROJETO: FinPulse — Controle Financeiro Pessoal
 
 > **Data de Atualização:** 14 de Outubro de 2026  
-> **Status Atual:** Em Produção (Vercel) • Banco Supabase Conectado • Automação n8n & Telegram Ativa (100% Operacional)  
+> **Status Atual:** Em Produção (Vercel) • Banco Supabase Conectado • Bot Telegram @dashfina_bot 100% Ativo no n8n  
 > **Ambiente de Desenvolvimento:** Next.js 15 (App Router), Supabase (PostgreSQL - Ref: `yjzmheubgqhlmuprbabp`), n8n, Telegram Bot API  
 > **URL de Produção (Vercel):** `https://financeiro-nu-sage.vercel.app`  
+> **Bot do Telegram:** `@dashfina_bot` (`https://t.me/dashfina_bot`)  
 > **Instância n8n:** `https://n8n.srv1298454.hstgr.cloud/workflow/NFFCmBOwdA94HffT` (Workflow Ativo)  
 > **URL do Supabase:** `https://yjzmheubgqhlmuprbabp.supabase.co`  
 > **Repositório GitHub:** `https://github.com/mickaautomacao-lang/financeiro.git` (Branch: `main`)  
