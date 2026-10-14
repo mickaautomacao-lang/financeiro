@@ -1,0 +1,95 @@
+{
+  "name": "FinPulse - Sincronização Google Planilhas -> Supabase",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Transações",
+          "mode": "name"
+        },
+        "event": "rowAdded"
+      },
+      "id": "google-sheets-trigger",
+      "name": "Google Sheets Trigger (Nova Linha)",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mapeamento das colunas da planilha para o payload da API Next.js / Supabase\nconst item = $input.first().json;\n\n// Suporte a diferentes nomenclaturas de colunas comuns em planilhas\nconst description = item['Descrição'] || item['Descricao'] || item['Estabelecimento'] || item['Description'];\nconst amountRaw = item['Valor'] || item['Quantia'] || item['Amount'];\nconst typeRaw = (item['Tipo'] || item['Type'] || 'Despesa').toLowerCase();\nconst category = item['Categoria'] || item['Category'] || 'Geral';\nconst date = item['Data'] || item['Date'] || new Date().toISOString().split('T')[0];\nconst paymentMethod = item['Forma de Pagamento'] || item['Metodo'] || 'Cartão';\n\n// Conversão de tipo\nconst type = typeRaw.includes('receita') || typeRaw.includes('entrada') || typeRaw === 'income' ? 'income' : 'expense';\n\nreturn [\n  {\n    json: {\n      user_id: $env.DEFAULT_USER_ID || '00000000-0000-0000-0000-000000000000',\n      description: String(description),\n      amount: amountRaw,\n      type: type,\n      category_name: String(category),\n      date: String(date),\n      payment_method: String(paymentMethod),\n      source: 'google_sheets',\n      notify_telegram: true\n    }\n  }\n];"
+      },
+      "id": "map-fields-code",
+      "name": "Mapear Colunas & Sanitizar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APP_BASE_URL || 'https://seu-dominio.com' }}/api/sync/transactions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-webhook-secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "http-post-sync",
+      "name": "POST /api/sync/transactions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger (Nova Linha)": {
+      "main": [
+        [
+          {
+            "node": "Mapear Colunas & Sanitizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapear Colunas & Sanitizar Dados": {
+      "main": [
+        [
+          {
+            "node": "POST /api/sync/transactions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+

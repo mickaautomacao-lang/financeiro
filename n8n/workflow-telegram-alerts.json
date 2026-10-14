@@ -1,0 +1,90 @@
+{
+  "name": "FinPulse - Cron Diário de Alertas Inteligentes (Telegram)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger-daily",
+      "name": "Cron Diário (08:00 AM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APP_BASE_URL || 'https://seu-dominio.com' }}/api/alerts/check",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.CRON_SECRET }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-check-alerts",
+      "name": "POST /api/alerts/check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.alertsTriggered.budgetWarnings + $json.alertsTriggered.debtsDue + $json.alertsTriggered.goalsAchieved }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "if-alerts-sent",
+      "name": "Houve Alertas Disparados?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Cron Diário (08:00 AM)": {
+      "main": [
+        [
+          {
+            "node": "POST /api/alerts/check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /api/alerts/check": {
+      "main": [
+        [
+          {
+            "node": "Houve Alertas Disparados?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+
