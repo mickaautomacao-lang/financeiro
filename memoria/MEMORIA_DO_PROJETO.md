@@ -4,6 +4,7 @@
 > **Status Atual:** Banco de Dados Supabase Conectado • Tabelas, RLS, Triggers e Views Criados  
 > **Ambiente de Desenvolvimento:** Next.js 15 (App Router), Supabase (PostgreSQL - Ref: `yjzmheubgqhlmuprbabp`), n8n, Telegram Bot API  
 > **URL do Supabase:** `https://yjzmheubgqhlmuprbabp.supabase.co`  
+> **Repositório GitHub:** `https://github.com/mickaautomacao-lang/financeiro.git` (Branch: `main`)  
 
 ---
 
