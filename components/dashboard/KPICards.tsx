@@ -3,41 +3,25 @@
 import React from 'react';
 import {
   TrendingUp,
-  TrendingDown,
-  Wallet,
   ArrowUpRight,
   ArrowDownRight,
-  ShieldCheck,
   Target,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
-import type { KPISummary } from '@/types/database.types';
+import { useFinance } from '@/context/FinanceContext';
 
-interface KPICardsProps {
-  data?: KPISummary;
-}
-
-export function KPICards({ data }: KPICardsProps) {
-  // Valores padrão / fallback se não fornecidos
-  const kpi = data || {
-    netRevenue: 14890.2,
-    totalIncome: 22450.0,
-    totalExpenses: 7559.8,
-    currentBalance: 18240.5,
-    emergencyFundProgress: 83.3, // 50k / 60k
-    totalInvestedOrGoals: 16109.75,
-    pendingDebtsTotal: 3420.0,
-  };
+export function KPICards() {
+  const { kpi, isLoading } = useFinance();
 
   const cards = [
     {
       title: 'Receita Líquida (Mês)',
       amount: kpi.netRevenue,
-      change: '+14.8%',
-      isPositive: true,
-      comparison: 'vs. mês anterior',
+      change: kpi.netRevenue > 0 ? '+Margem Positiva' : kpi.netRevenue < 0 ? '-Déficit' : '0.00%',
+      isPositive: kpi.netRevenue >= 0,
+      comparison: 'Entradas - Saídas',
       icon: TrendingUp,
       accentColor: 'border-neon/40 text-neon',
       glow: 'shadow-neon-sm',
@@ -45,9 +29,9 @@ export function KPICards({ data }: KPICardsProps) {
     {
       title: 'Entradas Realizadas',
       amount: kpi.totalIncome,
-      change: '+8.2%',
+      change: kpi.totalIncome > 0 ? 'Entradas Registradas' : 'Sem receitas',
       isPositive: true,
-      comparison: 'Meta atingida: 102%',
+      comparison: 'Total acumulado no período',
       icon: ArrowDownRight,
       accentColor: 'border-income/30 text-income',
       glow: '',
@@ -55,9 +39,9 @@ export function KPICards({ data }: KPICardsProps) {
     {
       title: 'Despesas Realizadas',
       amount: kpi.totalExpenses,
-      change: '-5.1%',
-      isPositive: true, // redução de gastos é positivo
-      comparison: 'Planejado: R$ 8.500,00',
+      change: kpi.totalExpenses > 0 ? 'Despesas Liquidadas' : 'Sem gastos',
+      isPositive: kpi.totalExpenses === 0,
+      comparison: 'Total de saídas registradas',
       icon: ArrowUpRight,
       accentColor: 'border-expense/30 text-expense',
       glow: '',
@@ -67,7 +51,7 @@ export function KPICards({ data }: KPICardsProps) {
       amount: kpi.totalInvestedOrGoals,
       change: `${kpi.emergencyFundProgress}%`,
       isPositive: true,
-      comparison: 'R$ 50k de R$ 60k meta',
+      comparison: 'Progresso da meta',
       icon: Target,
       accentColor: 'border-cyan-500/30 text-cyan-400',
       glow: '',
@@ -84,7 +68,9 @@ export function KPICards({ data }: KPICardsProps) {
           <Card
             key={card.title}
             className={`relative overflow-hidden border-border bg-surface hover:border-graphite-600 transition-all duration-200 group ${
-              index === 0 ? 'neon-border-glow bg-gradient-to-b from-surface via-surface to-neon-muted/20' : ''
+              index === 0
+                ? 'neon-border-glow bg-gradient-to-b from-surface via-surface to-neon-muted/20'
+                : ''
             }`}
           >
             <CardContent className="p-5">
@@ -101,7 +87,7 @@ export function KPICards({ data }: KPICardsProps) {
 
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-2xl font-bold tracking-tight text-white font-mono">
-                  {formatCurrency(card.amount)}
+                  {isLoading ? '...' : formatCurrency(card.amount)}
                 </span>
               </div>
 
@@ -126,7 +112,7 @@ export function KPICards({ data }: KPICardsProps) {
                   >
                     {card.change}
                   </Badge>
-                  <span className="text-[11px] text-graphite-400">
+                  <span className="text-[11px] text-graphite-400 truncate">
                     {card.comparison}
                   </span>
                 </div>
@@ -138,4 +124,3 @@ export function KPICards({ data }: KPICardsProps) {
     </div>
   );
 }
-

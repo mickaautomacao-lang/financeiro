@@ -8,12 +8,16 @@ import { CategoryDonutChart } from '@/components/dashboard/CategoryDonutChart';
 import { BudgetProgress } from '@/components/dashboard/BudgetProgress';
 import { TransactionTable } from '@/components/dashboard/TransactionTable';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Zap, ShieldCheck } from 'lucide-react';
+import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/lib/utils';
 
-export default function DashboardPage() {
+function DashboardView() {
+  const { kpi, transactions } = useFinance();
+
   return (
-    <DashboardLayout>
-      {/* 1. Banner Superior de Status do Sistema */}
+    <>
+      {/* 1. Banner Superior de Telemetria Contábil */}
       <div className="relative overflow-hidden rounded-2xl border border-neon/30 bg-gradient-to-r from-surface via-graphite-900 to-surface p-6">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-neon/15 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -31,15 +35,17 @@ export default function DashboardPage() {
               Controle Financeiro de Alta Performance
             </h2>
             <p className="text-xs text-graphite-300 mt-0.5">
-              Rastreamento de cada centavo em tempo real. Orçamentos integrados a gatilhos do n8n e notificações no Telegram.
+              Rastreamento de cada centavo em tempo real. Integrado diretamente ao Telegram <strong>@dashfina_bot</strong> e Supabase.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-[11px] text-graphite-400">Eficiência Orçamentária</p>
+              <p className="text-[11px] text-graphite-400">Status Contábil</p>
               <p className="text-xs font-semibold text-neon font-mono">
-                +14.8% de Margem Líquida
+                {transactions.length > 0
+                  ? `${transactions.length} Lançamentos • Saldo: ${formatCurrency(kpi.currentBalance)}`
+                  : 'Dashboard Zerado e Pronto'}
               </p>
             </div>
           </div>
@@ -70,6 +76,14 @@ export default function DashboardPage() {
           <TransactionTable />
         </div>
       </section>
+    </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <DashboardLayout>
+      <DashboardView />
     </DashboardLayout>
   );
 }

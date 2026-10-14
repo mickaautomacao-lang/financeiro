@@ -10,15 +10,27 @@ import {
   ArrowDownLeft,
   Wallet,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDateBR } from '@/lib/utils';
+import { useFinance } from '@/context/FinanceContext';
 
 export function RightSidebar() {
+  const { kpi, alerts, transactions, goals } = useFinance();
+
+  const emergencyGoal = goals.find((g) =>
+    g.name.toLowerCase().includes('reserva')
+  );
+  const emergencyAmount = emergencyGoal ? Number(emergencyGoal.current_amount) : 0;
+  const netWorth = kpi.currentBalance + kpi.totalInvestedOrGoals - kpi.pendingDebtsTotal;
+
+  const recentTransactions = transactions.slice(0, 4);
+
   return (
     <aside className="hidden xl:flex w-80 flex-col gap-6 border-l border-border bg-surface/50 p-6 overflow-y-auto">
-      {/* Resumo Rápido da Carteira */}
+      {/* Resumo Real da Carteira / Patrimônio */}
       <Card className="bg-gradient-to-br from-graphite-900 to-surface border-border relative overflow-hidden">
         <div className="absolute -right-6 -bottom-6 h-28 w-28 rounded-full bg-neon/10 blur-2xl" />
         <CardHeader className="pb-2">
@@ -28,146 +40,157 @@ export function RightSidebar() {
             </span>
             <Wallet className="h-4 w-4 text-neon" />
           </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
-            {formatCurrency(84350.25)}
+          <div className="text-2xl font-bold text-white tracking-tight font-mono">
+            {formatCurrency(netWorth)}
           </div>
         </CardHeader>
         <CardContent className="space-y-3 pt-2">
           <div className="flex items-center justify-between text-xs border-b border-border/60 pb-2">
             <span className="text-graphite-400">Disponível em Conta</span>
-            <span className="font-semibold text-white">{formatCurrency(18240.50)}</span>
+            <span
+              className={`font-semibold font-mono ${
+                kpi.currentBalance >= 0 ? 'text-white' : 'text-expense'
+              }`}
+            >
+              {formatCurrency(kpi.currentBalance)}
+            </span>
           </div>
           <div className="flex items-center justify-between text-xs border-b border-border/60 pb-2">
             <span className="text-graphite-400">Reserva de Emergência</span>
-            <span className="font-semibold text-neon">{formatCurrency(50000.00)}</span>
+            <span className="font-semibold text-neon font-mono">
+              {formatCurrency(emergencyAmount)}
+            </span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-graphite-400">Investimentos / Metas</span>
-            <span className="font-semibold text-graphite-200">{formatCurrency(16109.75)}</span>
+            <span className="font-semibold text-graphite-200 font-mono">
+              {formatCurrency(kpi.totalInvestedOrGoals)}
+            </span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Alertas Inteligentes (Integração Telegram / n8n) */}
+      {/* Alertas Inteligentes (Integrados ao Telegram & n8n) */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-graphite-400 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-neon" />
             Alertas & Notificações
           </h4>
-          <span className="text-[10px] text-neon font-mono bg-neon-muted px-1.5 py-0.5 rounded">
-            Telegram Link
-          </span>
+          <a
+            href="https://t.me/dashfina_bot"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-neon font-mono bg-neon-muted px-1.5 py-0.5 rounded border border-neon/30 flex items-center gap-1 hover:bg-neon/20 transition-colors"
+          >
+            <span>@dashfina_bot</span>
+            <ExternalLink className="h-2.5 w-2.5" />
+          </a>
         </div>
 
         <div className="space-y-2.5">
-          {/* Alerta Orçamento > 80% */}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 transition-colors hover:bg-amber-500/10">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-semibold text-amber-300">
-                  Atenção ao Orçamento!
-                </p>
-                <p className="text-[11px] text-graphite-300 mt-0.5 leading-relaxed">
-                  Categoria <strong>Alimentação</strong> atingiu <strong>84.2%</strong> do limite planejado.
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="warning" className="text-[10px] py-0 px-1.5">
-                    R$ 1.684 de R$ 2.000
-                  </Badge>
-                  <span className="text-[10px] text-graphite-400">Há 2 horas</span>
+          {alerts.length === 0 ? (
+            <div className="rounded-xl border border-border bg-graphite-900/40 p-3 text-center">
+              <CheckCircle2 className="h-5 w-5 text-neon/60 mx-auto mb-1" />
+              <p className="text-xs font-semibold text-white">Sem alertas pendentes</p>
+              <p className="text-[11px] text-graphite-400 mt-0.5">
+                Gastos e contas dentro do planejado.
+              </p>
+            </div>
+          ) : (
+            alerts.slice(0, 3).map((al, i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-3 transition-colors ${
+                  al.type === 'danger'
+                    ? 'border-expense/30 bg-expense/5 hover:bg-expense/10'
+                    : 'border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10'
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  {al.type === 'danger' ? (
+                    <CalendarClock className="h-4 w-4 text-expense shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <p
+                      className={`text-xs font-semibold ${
+                        al.type === 'danger' ? 'text-red-300' : 'text-amber-300'
+                      }`}
+                    >
+                      {al.title}
+                    </p>
+                    <p className="text-[11px] text-graphite-300 mt-0.5 leading-relaxed">
+                      {al.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge
+                        variant={al.type === 'danger' ? 'danger' : 'warning'}
+                        className="text-[10px] py-0 px-1.5 font-mono"
+                      >
+                        {al.badge}
+                      </Badge>
+                      <span className="text-[10px] text-graphite-400">{al.time}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Alerta de Vencimento de Dívida */}
-          <div className="rounded-xl border border-expense/30 bg-expense/5 p-3 transition-colors hover:bg-expense/10">
-            <div className="flex items-start gap-2.5">
-              <CalendarClock className="h-4 w-4 text-expense shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-semibold text-red-300">
-                  Vencimento Próximo (3 dias)
-                </p>
-                <p className="text-[11px] text-graphite-300 mt-0.5 leading-relaxed">
-                  Fatura Cartão Black (Nubank) vence dia <strong>16/10</strong>.
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="danger" className="text-[10px] py-0 px-1.5">
-                    {formatCurrency(3420.00)}
-                  </Badge>
-                  <span className="text-[10px] text-graphite-400">Notificado no Bot</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Meta Atingida */}
-          <div className="rounded-xl border border-neon/30 bg-neon-muted p-3 transition-colors hover:bg-neon/15">
-            <div className="flex items-start gap-2.5">
-              <CheckCircle2 className="h-4 w-4 text-neon shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-semibold text-neon">
-                  Meta Parcial Alcançada!
-                </p>
-                <p className="text-[11px] text-graphite-300 mt-0.5 leading-relaxed">
-                  Aporte de R$ 1.500 concluído para a <strong>Reserva de Emergência</strong>.
-                </p>
-                <span className="text-[10px] text-graphite-400 mt-1 block">Ontem às 18:30</span>
-              </div>
-            </div>
-          </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Feed de Atividades Recentes */}
+      {/* Feed de Atividades Recentes em Tempo Real */}
       <div className="flex-1">
         <h4 className="text-xs font-bold uppercase tracking-wider text-graphite-400 mb-3">
           Atividades Recentes
         </h4>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-income-muted text-income">
-                <ArrowDownLeft className="h-3.5 w-3.5" />
-              </div>
-              <div>
-                <p className="font-medium text-white">Google Sheets Sync</p>
-                <p className="text-[10px] text-graphite-400">Recebimento Consultoria</p>
-              </div>
-            </div>
-            <span className="font-semibold text-income">+{formatCurrency(6500.00)}</span>
-          </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-expense-muted text-expense">
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </div>
-              <div>
-                <p className="font-medium text-white">Supermercado Pão de Açúcar</p>
-                <p className="text-[10px] text-graphite-400">Via Cartão Débito</p>
-              </div>
-            </div>
-            <span className="font-semibold text-expense">-{formatCurrency(482.30)}</span>
+        {recentTransactions.length === 0 ? (
+          <div className="rounded-xl border border-border bg-graphite-900/30 p-4 text-center text-xs text-graphite-400">
+            Nenhuma atividade recente registrada.
           </div>
-
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-graphite-800 text-graphite-300">
-                <Send className="h-3.5 w-3.5 text-neon" />
+        ) : (
+          <div className="space-y-3">
+            {recentTransactions.map((tx) => (
+              <div
+                key={tx.id}
+                className="flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-2.5 truncate pr-2">
+                  <div
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                      tx.type === 'income'
+                        ? 'bg-income-muted text-income'
+                        : 'bg-expense-muted text-expense'
+                    }`}
+                  >
+                    {tx.type === 'income' ? (
+                      <ArrowDownLeft className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    )}
+                  </div>
+                  <div className="truncate">
+                    <p className="font-medium text-white truncate">{tx.description}</p>
+                    <p className="text-[10px] text-graphite-400">
+                      {formatDateBR(tx.date)} • {tx.source || 'Web'}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`font-semibold font-mono shrink-0 ${
+                    tx.type === 'income' ? 'text-income' : 'text-expense'
+                  }`}
+                >
+                  {tx.type === 'income' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
+                </span>
               </div>
-              <div>
-                <p className="font-medium text-white">Telegram Bot</p>
-                <p className="text-[10px] text-graphite-400">Comando /resumo executado</p>
-              </div>
-            </div>
-            <span className="text-[10px] text-graphite-400">14:15</span>
+            ))}
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );
 }
-

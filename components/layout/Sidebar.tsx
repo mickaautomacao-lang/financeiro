@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   LineChart,
@@ -11,32 +12,43 @@ import {
   CreditCard,
   Settings,
   Zap,
-  TrendingUp,
   ShieldCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
-  isActive?: boolean;
-}
-
-const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/', icon: LayoutDashboard, isActive: true },
-  { label: 'Analytics', href: '/analytics', icon: LineChart },
-  { label: 'Transações', href: '/transactions', icon: ArrowLeftRight, badge: 'Auto' },
-  { label: 'Orçamentos', href: '/budgets', icon: PieChart },
-  { label: 'Metas & Reserva', href: '/goals', icon: Target },
-  { label: 'Dívidas & Contas', href: '/debts', icon: CreditCard, badge: '2' },
-  { label: 'Configurações', href: '/settings', icon: Settings },
-];
+import { useFinance } from '@/context/FinanceContext';
 
 export function Sidebar() {
+  const pathname = usePathname();
+  const { debts } = useFinance();
+
+  const nearDueDebtsCount = debts.filter((d) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const parts = d.due_date.split('-');
+    const dueDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    const diffDays = Math.ceil(
+      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return diffDays <= 3;
+  }).length;
+
+  const navItems = [
+    { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { label: 'Analytics', href: '/analytics', icon: LineChart },
+    { label: 'Transações', href: '/transactions', icon: ArrowLeftRight, badge: 'Auto' },
+    { label: 'Orçamentos', href: '/budgets', icon: PieChart },
+    { label: 'Metas & Reserva', href: '/goals', icon: Target },
+    {
+      label: 'Dívidas & Contas',
+      href: '/debts',
+      icon: CreditCard,
+      badge: nearDueDebtsCount > 0 ? String(nearDueDebtsCount) : undefined,
+    },
+    { label: 'Configurações', href: '/settings', icon: Settings },
+  ];
+
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-surface/95 backdrop-blur-md">
       {/* Brand / Logo */}
@@ -68,13 +80,15 @@ export function Sidebar() {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive = pathname === item.href;
+
               return (
                 <Link
                   key={item.label}
                   href={item.href}
                   className={cn(
                     'group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
-                    item.isActive
+                    isActive
                       ? 'bg-neon-muted text-neon border-l-2 border-neon font-semibold'
                       : 'text-graphite-300 hover:bg-surface-hover hover:text-white'
                   )}
@@ -83,7 +97,7 @@ export function Sidebar() {
                     <Icon
                       className={cn(
                         'h-4 w-4 transition-colors',
-                        item.isActive
+                        isActive
                           ? 'text-neon drop-shadow-[0_0_8px_rgba(163,230,53,0.6)]'
                           : 'text-graphite-400 group-hover:text-white'
                       )}
@@ -92,7 +106,7 @@ export function Sidebar() {
                   </div>
                   {item.badge && (
                     <Badge
-                      variant={item.isActive ? 'neon' : 'neutral'}
+                      variant={isActive ? 'neon' : 'neutral'}
                       className="text-[10px] px-1.5 py-0"
                     >
                       {item.badge}
@@ -119,7 +133,7 @@ export function Sidebar() {
             <span className="text-[10px] text-neon font-mono">ONLINE</span>
           </div>
           <p className="mt-1.5 text-[11px] text-graphite-400">
-            Sincronização com Google Sheets e Telegram ativa.
+            Bot @dashfina_bot e Vercel sincronizados.
           </p>
         </div>
       </div>
@@ -132,10 +146,10 @@ export function Sidebar() {
           </Avatar>
           <div className="flex flex-1 flex-col truncate">
             <span className="text-xs font-semibold text-white truncate">
-              Engenheiro Sênior
+              Administrador
             </span>
             <span className="text-[11px] text-graphite-400 truncate">
-              finance@antigravity.io
+              mickaautomacao@gmail.com
             </span>
           </div>
           <ShieldCheck className="h-4 w-4 text-neon" />
@@ -144,4 +158,3 @@ export function Sidebar() {
     </aside>
   );
 }
-
