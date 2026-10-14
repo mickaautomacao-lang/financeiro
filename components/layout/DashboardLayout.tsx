@@ -28,17 +28,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       {/* 1. Sidebar de Navegação Fixa à Esquerda */}
       <Sidebar />
 
-      {/* 2. Área Central e Conteúdo */}
-      <div className="flex flex-1 flex-col pl-64 transition-all duration-200">
+      {/* 2. Área Central e Conteúdo Responsivo */}
+      <div className="flex flex-1 flex-col pl-0 lg:pl-64 transition-all duration-200 w-full min-w-0">
         <Header />
 
-        <div className="flex flex-1">
+        <div className="flex flex-1 min-w-0">
           {/* Conteúdo Principal do Dashboard */}
-          <main className="flex-1 p-8 overflow-y-auto max-w-[1440px] space-y-8">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-[1440px] space-y-6 sm:space-y-8 w-full min-w-0">
             {children}
           </main>
 
-          {/* 3. Barra Lateral Direita de Notificações e Atividades */}
+          {/* 3. Barra Lateral Direita de Notificações e Atividades (Desktop) */}
           <RightSidebar />
         </div>
       </div>

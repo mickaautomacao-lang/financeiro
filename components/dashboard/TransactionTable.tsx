@@ -155,7 +155,7 @@ export function TransactionTable() {
             </Button>
           </div>
         ) : (
-          <table className="w-full text-left text-xs text-graphite-200">
+          <table className="w-full min-w-[620px] text-left text-xs text-graphite-200">
             <thead className="border-y border-border bg-graphite-900/60 uppercase font-semibold text-[10px] tracking-wider text-graphite-400">
               <tr>
                 <th

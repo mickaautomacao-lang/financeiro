@@ -41,6 +41,8 @@ interface FinanceContextType {
   categoryToEdit: Category | null;
   setCategoryToEdit: (cat: Category | null) => void;
   openCategoryModal: (cat?: Category | null) => void;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
   isNotificationDropdownOpen: boolean;
   setIsNotificationDropdownOpen: (open: boolean) => void;
   refreshData: () => Promise<void>;
@@ -80,6 +82,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
 
   const openCategoryModal = (cat?: Category | null) => {
@@ -166,6 +169,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         categoryToEdit,
         setCategoryToEdit,
         openCategoryModal,
+        isMobileMenuOpen,
+        setIsMobileMenuOpen,
         isNotificationDropdownOpen,
         setIsNotificationDropdownOpen,
         refreshData,

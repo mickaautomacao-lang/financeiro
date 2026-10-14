@@ -18,20 +18,20 @@ function DashboardView() {
   return (
     <>
       {/* 1. Banner Superior de Telemetria Contábil */}
-      <div className="relative overflow-hidden rounded-2xl border border-neon/30 bg-gradient-to-r from-surface via-graphite-900 to-surface p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-neon/30 bg-gradient-to-r from-surface via-graphite-900 to-surface p-4 sm:p-6">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-neon/15 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <Badge variant="neon" className="gap-1 text-[11px]">
                 <Zap className="h-3 w-3 fill-neon" />
                 Motor de Precisão Contábil Ativo
               </Badge>
-              <span className="text-xs text-graphite-400 font-mono">
+              <span className="text-[11px] sm:text-xs text-graphite-400 font-mono">
                 Supabase PostgreSQL • RLS Ativo
               </span>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
               Controle Financeiro de Alta Performance
             </h2>
             <p className="text-xs text-graphite-300 mt-0.5">
@@ -39,8 +39,8 @@ function DashboardView() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="text-right">
+          <div className="flex items-center gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-border/60">
+            <div className="text-left md:text-right">
               <p className="text-[11px] text-graphite-400">Status Contábil</p>
               <p className="text-xs font-semibold text-neon font-mono">
                 {transactions.length > 0
