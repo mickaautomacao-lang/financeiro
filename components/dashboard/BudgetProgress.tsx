@@ -3,7 +3,6 @@
 import React from 'react';
 import { AlertTriangle, Plus, Pencil } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { useFinance } from '@/context/FinanceContext';
 
@@ -30,16 +29,18 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
 
   return (
     <Card className="border-border bg-surface">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <div>
-          <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-            Planejado vs. Realizado (Limites Mensais)
-            <Badge variant="neon" className="text-[10px] py-0">
-              Regra 80% Ativa
-            </Badge>
-          </CardTitle>
-          <p className="text-xs text-graphite-400 mt-0.5">
-            Monitoramento de categorias com disparo de alerta no Telegram
+      <CardHeader className="flex flex-row items-center justify-between pb-3.5 gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-bold text-white truncate">
+              Planejado vs. Realizado
+            </CardTitle>
+            <span className="hidden sm:inline-flex items-center text-[10px] font-semibold text-neon bg-neon-muted px-1.5 py-0.5 rounded border border-neon/30 whitespace-nowrap">
+              Regra 80%
+            </span>
+          </div>
+          <p className="text-[11px] text-graphite-400 mt-0.5 truncate">
+            Limites mensais e alertas Telegram
           </p>
         </div>
 
@@ -47,7 +48,8 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
           <button
             type="button"
             onClick={() => openCategoryModal(null)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-black bg-neon hover:bg-neon-muted rounded-lg transition-all shadow-neon-sm"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-black bg-neon hover:bg-neon-muted rounded-lg transition-all shadow-neon-sm whitespace-nowrap flex-shrink-0"
+            title="Criar nova categoria"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Nova Categoria</span>
@@ -55,7 +57,7 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
         )}
       </CardHeader>
 
-      <CardContent className="space-y-4 pt-1">
+      <CardContent className="space-y-3 pt-1">
         {displayList.length === 0 ? (
           <div className="py-8 text-center space-y-3">
             <p className="text-xs text-graphite-400">
@@ -75,8 +77,6 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
             const actualSpent = parseFloat(String(item.actual_spent)) || 0;
             const plannedAmount = parseFloat(String(item.planned_amount)) || 0;
             const percentageUsed = parseFloat(String(item.percentage_used)) || 0;
-            const remainingBudget =
-              parseFloat(String(item.remaining_budget)) || (plannedAmount - actualSpent);
 
             const isWarning = percentageUsed >= 80;
             const isOver = percentageUsed >= 100;
@@ -86,56 +86,56 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
             return (
               <div
                 key={item.category_name}
-                className="space-y-1.5 p-2 rounded-lg hover:bg-graphite-900/50 transition-colors group"
+                className="space-y-2 p-2.5 rounded-xl bg-graphite-900/40 hover:bg-graphite-900/80 border border-transparent hover:border-border/70 transition-all group"
               >
-                {/* Header da Categoria */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
+                {/* Linha 1: Nome da Categoria + Percentual */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <span
-                      className="h-2.5 w-2.5 rounded-full"
+                      className="h-2 w-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: item.category_color || '#A3E635' }}
                     />
-                    <span className="font-semibold text-white">{item.category_name}</span>
+                    <span
+                      className="font-medium text-xs text-white truncate max-w-[140px] sm:max-w-[200px]"
+                      title={item.category_name}
+                    >
+                      {item.category_name}
+                    </span>
 
                     {/* Botão de Editar Categoria */}
                     <button
                       type="button"
                       onClick={() => openCategoryModal(categoryData || null)}
-                      title="Editar nome, teto orçamentário ou cor desta categoria"
-                      className="opacity-70 group-hover:opacity-100 p-1 text-graphite-400 hover:text-neon hover:bg-graphite-800 rounded transition-all"
+                      title="Editar categoria e teto"
+                      className="opacity-60 group-hover:opacity-100 p-0.5 text-graphite-400 hover:text-neon rounded transition-opacity flex-shrink-0"
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
 
                     {isWarning && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">
+                      <span className="inline-flex items-center gap-0.5 text-[9px] text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/30 whitespace-nowrap flex-shrink-0">
                         <AlertTriangle className="h-2.5 w-2.5" />
-                        &gt; 80% (Notificado)
+                        80%
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3 font-mono">
-                    <span className="text-graphite-300">
-                      <strong className="text-white">{formatCurrency(actualSpent)}</strong> /{' '}
-                      {formatCurrency(plannedAmount)}
-                    </span>
-                    <span
-                      className={`font-semibold text-right w-12 ${
-                        isOver
-                          ? 'text-expense'
-                          : isWarning
-                          ? 'text-amber-400'
-                          : 'text-neon'
-                      }`}
-                    >
-                      {percentageUsed.toFixed(1)}%
-                    </span>
-                  </div>
+                  {/* Percentual em Badge Monospaçada */}
+                  <span
+                    className={`text-[11px] font-bold font-mono px-1.5 py-0.5 rounded border whitespace-nowrap flex-shrink-0 ${
+                      isOver
+                        ? 'text-expense border-expense/30 bg-expense/10'
+                        : isWarning
+                        ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+                        : 'text-neon border-neon/30 bg-neon/10'
+                    }`}
+                  >
+                    {percentageUsed.toFixed(1)}%
+                  </span>
                 </div>
 
-                {/* Barra de Progresso com Indicador de Estágio */}
-                <div className="relative h-2 w-full overflow-hidden rounded-full bg-graphite-900 border border-border">
+                {/* Linha 2: Barra de Progresso Suave */}
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-graphite-950 border border-border/60">
                   {/* Marcador dos 80% (Threshold de Alerta) */}
                   <div
                     className="absolute top-0 bottom-0 w-0.5 bg-graphite-600 z-10"
@@ -146,33 +146,35 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       isOver
-                        ? 'bg-expense shadow-[0_0_10px_rgba(248,113,113,0.5)]'
+                        ? 'bg-expense shadow-[0_0_8px_rgba(248,113,113,0.5)]'
                         : isWarning
-                        ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]'
+                        ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
                         : 'bg-neon shadow-neon-sm'
                     }`}
                     style={{ width: `${Math.min(percentageUsed, 100)}%` }}
                   />
                 </div>
 
-                {/* Informação de Saldo Restante */}
-                <div className="flex items-center justify-between text-[11px] text-graphite-400 pt-0.5">
-                  <span>
-                    Disponível para gastar:{' '}
-                    <span
-                      className={
-                        remainingBudget < 0
-                          ? 'text-expense font-semibold'
-                          : 'text-graphite-200 font-medium'
-                      }
-                    >
-                      {formatCurrency(remainingBudget)}
-                    </span>
+                {/* Linha 3: Valores Financeiros Proporcionais (Gasto vs Teto) */}
+                <div className="flex items-center justify-between text-[11px] font-mono text-graphite-400 pt-0.5">
+                  <span className="truncate">
+                    Gasto:{' '}
+                    <strong className="text-white font-semibold">
+                      {formatCurrency(actualSpent)}
+                    </strong>
                   </span>
-                  <span className="font-mono text-[10px] text-graphite-400">
-                    {plannedAmount > 0
-                      ? `Teto: ${formatCurrency(plannedAmount)}`
-                      : 'Sem teto definido'}
+
+                  <span className="truncate text-right">
+                    {plannedAmount > 0 ? (
+                      <>
+                        Teto:{' '}
+                        <span className="text-graphite-300 font-medium">
+                          {formatCurrency(plannedAmount)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-graphite-500 italic text-[10px]">Sem teto</span>
+                    )}
                   </span>
                 </div>
               </div>
