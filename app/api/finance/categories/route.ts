@@ -1,0 +1,131 @@
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+
+const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
+
+export async function GET() {
+  try {
+    const { data: categories, error } = await supabaseAdmin
+      .from('categories')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, categories });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { name, budget_limit, color, icon } = body;
+
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return NextResponse.json(
+        { success: false, error: 'O nome da categoria é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedName = name.trim();
+    const budgetLimitNumber = parseFloat(String(budget_limit || 0));
+
+    const { data, error } = await supabaseAdmin
+      .from('categories')
+      .insert({
+        user_id: DEFAULT_USER_ID,
+        name: trimmedName,
+        budget_limit: isNaN(budgetLimitNumber) ? 0 : Math.max(0, budgetLimitNumber),
+        color: color || '#A3E635',
+        icon: icon || 'Tag',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json(
+          { success: false, error: 'Já existe uma categoria cadastrada com este nome.' },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, category: data }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, name, budget_limit, color, icon } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'ID da categoria é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    const updates: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (name !== undefined) updates.name = name.trim();
+    if (budget_limit !== undefined) {
+      const val = parseFloat(String(budget_limit));
+      updates.budget_limit = isNaN(val) ? 0 : Math.max(0, val);
+    }
+    if (color !== undefined) updates.color = color;
+    if (icon !== undefined) updates.icon = icon;
+
+    const { data, error } = await supabaseAdmin
+      .from('categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, category: data });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'ID da categoria não informado.' },
+        { status: 400 }
+      );
+    }
+
+    // Opcional: desvincular ou verificar transações vinculadas
+    const { error } = await supabaseAdmin.from('categories').delete().eq('id', id);
+
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Categoria removida com sucesso.' });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+

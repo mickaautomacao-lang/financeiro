@@ -6,6 +6,7 @@ import { Header } from './Header';
 import { RightSidebar } from './RightSidebar';
 import { FinanceProvider, useFinance } from '@/context/FinanceContext';
 import { NewTransactionModal } from '@/components/dashboard/NewTransactionModal';
+import { CategoryModal } from '@/components/dashboard/CategoryModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const {
     isNewTransactionModalOpen,
     setIsNewTransactionModalOpen,
+    isCategoryModalOpen,
+    setIsCategoryModalOpen,
+    categoryToEdit,
     categories,
     refreshData,
   } = useFinance();
@@ -44,6 +48,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         isOpen={isNewTransactionModalOpen}
         onClose={() => setIsNewTransactionModalOpen(false)}
         categories={categories}
+        onSuccess={refreshData}
+      />
+
+      {/* Modal de Nova / Editar Categoria & Orçamento */}
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        categoryToEdit={categoryToEdit}
         onSuccess={refreshData}
       />
     </div>

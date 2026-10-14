@@ -1,16 +1,22 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Plus, Pencil } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { useFinance } from '@/context/FinanceContext';
 
-export function BudgetProgress() {
-  const { budgets, categories } = useFinance();
+interface BudgetProgressProps {
+  limit?: number;
+  showAddButton?: boolean;
+}
+
+export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgressProps) {
+  const { budgets, categories, openCategoryModal } = useFinance();
 
   const displayList = budgets.length > 0 ? budgets : categories.map((c) => ({
+    category_id: c.id,
     category_name: c.name,
     planned_amount: c.budget_limit,
     actual_spent: 0,
@@ -19,6 +25,8 @@ export function BudgetProgress() {
     alert_threshold_reached: false,
     category_color: c.color,
   }));
+
+  const itemsToShow = limit ? displayList.slice(0, limit) : displayList;
 
   return (
     <Card className="border-border bg-surface">
@@ -34,33 +42,71 @@ export function BudgetProgress() {
             Monitoramento de categorias com disparo de alerta no Telegram
           </p>
         </div>
+
+        {showAddButton && (
+          <button
+            type="button"
+            onClick={() => openCategoryModal(null)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-black bg-neon hover:bg-neon-muted rounded-lg transition-all shadow-neon-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nova Categoria</span>
+          </button>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4 pt-1">
         {displayList.length === 0 ? (
-          <div className="py-6 text-center text-xs text-graphite-400">
-            Nenhuma categoria de orçamento configurada.
+          <div className="py-8 text-center space-y-3">
+            <p className="text-xs text-graphite-400">
+              Nenhuma categoria de orçamento cadastrada no momento.
+            </p>
+            <button
+              type="button"
+              onClick={() => openCategoryModal(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-black bg-neon hover:bg-neon-muted rounded-lg transition-all shadow-neon-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Criar Primeira Categoria</span>
+            </button>
           </div>
         ) : (
-          displayList.slice(0, 5).map((item) => {
+          itemsToShow.map((item) => {
             const actualSpent = parseFloat(String(item.actual_spent)) || 0;
             const plannedAmount = parseFloat(String(item.planned_amount)) || 0;
             const percentageUsed = parseFloat(String(item.percentage_used)) || 0;
-            const remainingBudget = parseFloat(String(item.remaining_budget)) || (plannedAmount - actualSpent);
+            const remainingBudget =
+              parseFloat(String(item.remaining_budget)) || (plannedAmount - actualSpent);
 
             const isWarning = percentageUsed >= 80;
             const isOver = percentageUsed >= 100;
 
+            const categoryData = categories.find((c) => c.name === item.category_name);
+
             return (
-              <div key={item.category_name} className="space-y-1.5">
+              <div
+                key={item.category_name}
+                className="space-y-1.5 p-2 rounded-lg hover:bg-graphite-900/50 transition-colors group"
+              >
                 {/* Header da Categoria */}
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <span
-                      className="h-2 w-2 rounded-full"
+                      className="h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: item.category_color || '#A3E635' }}
                     />
-                    <span className="font-medium text-white">{item.category_name}</span>
+                    <span className="font-semibold text-white">{item.category_name}</span>
+
+                    {/* Botão de Editar Categoria */}
+                    <button
+                      type="button"
+                      onClick={() => openCategoryModal(categoryData || null)}
+                      title="Editar nome, teto orçamentário ou cor desta categoria"
+                      className="opacity-70 group-hover:opacity-100 p-1 text-graphite-400 hover:text-neon hover:bg-graphite-800 rounded transition-all"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+
                     {isWarning && (
                       <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">
                         <AlertTriangle className="h-2.5 w-2.5" />
@@ -71,10 +117,8 @@ export function BudgetProgress() {
 
                   <div className="flex items-center gap-3 font-mono">
                     <span className="text-graphite-300">
-                      <strong className="text-white">
-                        {formatCurrency(actualSpent)}
-                      </strong>{' '}
-                      / {formatCurrency(plannedAmount)}
+                      <strong className="text-white">{formatCurrency(actualSpent)}</strong> /{' '}
+                      {formatCurrency(plannedAmount)}
                     </span>
                     <span
                       className={`font-semibold text-right w-12 ${
@@ -125,7 +169,11 @@ export function BudgetProgress() {
                       {formatCurrency(remainingBudget)}
                     </span>
                   </span>
-                  <span>Limite mensal</span>
+                  <span className="font-mono text-[10px] text-graphite-400">
+                    {plannedAmount > 0
+                      ? `Teto: ${formatCurrency(plannedAmount)}`
+                      : 'Sem teto definido'}
+                  </span>
                 </div>
               </div>
             );

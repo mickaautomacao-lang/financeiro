@@ -36,6 +36,11 @@ interface FinanceContextType {
   setSearchTerm: (term: string) => void;
   isNewTransactionModalOpen: boolean;
   setIsNewTransactionModalOpen: (open: boolean) => void;
+  isCategoryModalOpen: boolean;
+  setIsCategoryModalOpen: (open: boolean) => void;
+  categoryToEdit: Category | null;
+  setCategoryToEdit: (cat: Category | null) => void;
+  openCategoryModal: (cat?: Category | null) => void;
   isNotificationDropdownOpen: boolean;
   setIsNotificationDropdownOpen: (open: boolean) => void;
   refreshData: () => Promise<void>;
@@ -73,7 +78,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [selectedPeriod, setSelectedPeriod] = useState('current_month');
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+
+  const openCategoryModal = (cat?: Category | null) => {
+    setCategoryToEdit(cat || null);
+    setIsCategoryModalOpen(true);
+  };
 
   const fetchData = useCallback(
     async (isBackground = false) => {
@@ -149,6 +161,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setSearchTerm,
         isNewTransactionModalOpen,
         setIsNewTransactionModalOpen,
+        isCategoryModalOpen,
+        setIsCategoryModalOpen,
+        categoryToEdit,
+        setCategoryToEdit,
+        openCategoryModal,
         isNotificationDropdownOpen,
         setIsNotificationDropdownOpen,
         refreshData,
