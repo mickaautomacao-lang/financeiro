@@ -154,13 +154,38 @@ export function CategoryModal({
             closing_day: categoryNature === 'income' ? null : numericClosingDay,
           };
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      let res: Response | null = null;
+      let lastError: any = null;
 
-      const data = await res.json();
+      // Tentativa com retry transparente em caso de oscilação momentânea de rede / deploy
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (res) break;
+        } catch (fetchErr) {
+          lastError = fetchErr;
+          if (attempt === 1) {
+            await new Promise((resolve) => setTimeout(resolve, 800));
+          }
+        }
+      }
+
+      if (!res) {
+        throw new Error(
+          'Instabilidade temporária na conexão com o servidor. Por favor, tente novamente.'
+        );
+      }
+
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        throw new Error('Resposta inválida do servidor. Tente novamente.');
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Erro ao salvar categoria.');
@@ -169,7 +194,11 @@ export function CategoryModal({
       if (onSuccess) onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Falha ao processar solicitação.');
+      const msg =
+        err?.message?.includes('Failed to fetch') || err?.name === 'TypeError'
+          ? 'Instabilidade temporária de rede. Por favor, tente clicar novamente.'
+          : err.message || 'Falha ao processar solicitação.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
