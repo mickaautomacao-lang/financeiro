@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type {
   Transaction,
   Category,
+  CategoryInstallment,
   Debt,
   Goal,
   BudgetComparison,
@@ -25,6 +26,7 @@ interface FinanceContextType {
   budgets: BudgetComparison[];
   debts: Debt[];
   goals: Goal[];
+  installments: CategoryInstallment[];
   cashFlowData: Array<{ day: string; receitas: number; despesas: number }>;
   categoryDistribution: Array<{ name: string; value: number; color: string }>;
   alerts: AlertItem[];
@@ -41,6 +43,11 @@ interface FinanceContextType {
   categoryToEdit: Category | null;
   setCategoryToEdit: (cat: Category | null) => void;
   openCategoryModal: (cat?: Category | null) => void;
+  isInstallmentsModalOpen: boolean;
+  setIsInstallmentsModalOpen: (open: boolean) => void;
+  selectedCategoryForInstallments: Category | null;
+  openInstallmentsModal: (category: Category) => void;
+  payInstallment: (id: string) => Promise<boolean>;
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
   isNotificationDropdownOpen: boolean;
@@ -68,6 +75,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [budgets, setBudgets] = useState<BudgetComparison[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [installments, setInstallments] = useState<CategoryInstallment[]>([]);
   const [cashFlowData, setCashFlowData] = useState<
     Array<{ day: string; receitas: number; despesas: number }>
   >([]);
@@ -82,12 +90,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState(false);
+  const [selectedCategoryForInstallments, setSelectedCategoryForInstallments] =
+    useState<Category | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
 
   const openCategoryModal = (cat?: Category | null) => {
     setCategoryToEdit(cat || null);
     setIsCategoryModalOpen(true);
+  };
+
+  const openInstallmentsModal = (category: Category) => {
+    setSelectedCategoryForInstallments(category);
+    setIsInstallmentsModalOpen(true);
   };
 
   const fetchData = useCallback(
@@ -106,6 +122,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           setBudgets(data.budgets || []);
           setDebts(data.debts || []);
           setGoals(data.goals || []);
+          setInstallments(data.installments || []);
           setCashFlowData(data.cashFlowData || []);
           setCategoryDistribution(data.categoryDistribution || []);
           setAlerts(data.alerts || []);
@@ -126,6 +143,24 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const refreshData = async () => {
     await fetchData(true);
+  };
+
+  const payInstallment = async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/finance/installments/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, register_transaction: true }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
   };
 
   const deleteTransaction = async (id: string): Promise<boolean> => {
@@ -153,6 +188,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         budgets,
         debts,
         goals,
+        installments,
         cashFlowData,
         categoryDistribution,
         alerts,
@@ -169,6 +205,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         categoryToEdit,
         setCategoryToEdit,
         openCategoryModal,
+        isInstallmentsModalOpen,
+        setIsInstallmentsModalOpen,
+        selectedCategoryForInstallments,
+        openInstallmentsModal,
+        payInstallment,
         isMobileMenuOpen,
         setIsMobileMenuOpen,
         isNotificationDropdownOpen,

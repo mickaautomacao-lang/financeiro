@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, budget_limit, color, icon } = body;
+    const { name, budget_limit, color, icon, category_type } = body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
@@ -43,6 +43,7 @@ export async function POST(request: Request) {
         budget_limit: isNaN(budgetLimitNumber) ? 0 : Math.max(0, budgetLimitNumber),
         color: color || '#A3E635',
         icon: icon || 'Tag',
+        category_type: category_type || 'variable',
       })
       .select()
       .single();
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, budget_limit, color, icon } = body;
+    const { id, name, budget_limit, color, icon, category_type } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -86,6 +87,7 @@ export async function PUT(request: Request) {
     }
     if (color !== undefined) updates.color = color;
     if (icon !== undefined) updates.icon = icon;
+    if (category_type !== undefined) updates.category_type = category_type;
 
     const { data, error } = await supabaseAdmin
       .from('categories')

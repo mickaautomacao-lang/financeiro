@@ -18,6 +18,8 @@ import {
   Coffee,
   Trash2,
   Check,
+  CreditCard,
+  Repeat,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { Category } from '@/types/database.types';
@@ -35,6 +37,7 @@ export const ICON_MAP: Record<string, React.ElementType> = {
   Plane,
   Sparkles,
   Coffee,
+  CreditCard,
 };
 
 export const COLOR_PALETTE = [
@@ -69,6 +72,7 @@ export function CategoryModal({
   const [budgetLimit, setBudgetLimit] = useState('');
   const [color, setColor] = useState('#A3E635');
   const [icon, setIcon] = useState('Tag');
+  const [categoryType, setCategoryType] = useState<'variable' | 'fixed' | 'credit_card'>('variable');
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,11 +85,13 @@ export function CategoryModal({
       setBudgetLimit(categoryToEdit.budget_limit ? String(categoryToEdit.budget_limit) : '');
       setColor(categoryToEdit.color || '#A3E635');
       setIcon(categoryToEdit.icon || 'Tag');
+      setCategoryType(categoryToEdit.category_type || 'variable');
     } else {
       setName('');
       setBudgetLimit('');
       setColor('#A3E635');
       setIcon('Tag');
+      setCategoryType('variable');
     }
     setError(null);
   }, [categoryToEdit, isOpen]);
@@ -113,8 +119,8 @@ export function CategoryModal({
       const url = '/api/finance/categories';
       const method = isEditing ? 'PUT' : 'POST';
       const payload = isEditing
-        ? { id: categoryToEdit!.id, name: name.trim(), budget_limit: numericLimit, color, icon }
-        : { name: name.trim(), budget_limit: numericLimit, color, icon };
+        ? { id: categoryToEdit!.id, name: name.trim(), budget_limit: numericLimit, color, icon, category_type: categoryType }
+        : { name: name.trim(), budget_limit: numericLimit, color, icon, category_type: categoryType };
 
       const res = await fetch(url, {
         method,
@@ -186,7 +192,7 @@ export function CategoryModal({
               </h2>
               <p className="text-xs text-graphite-400">
                 {isEditing
-                  ? 'Atualize o nome, ícone ou ajuste o teto mensal da regra de 80%'
+                  ? 'Atualize o tipo, nome, ícone ou ajuste o teto mensal da regra de 80%'
                   : 'Crie uma nova categoria para agrupar despesas e definir tetos'}
               </p>
             </div>
@@ -214,13 +220,84 @@ export function CategoryModal({
                 className="w-3.5 h-3.5 rounded-full"
                 style={{ backgroundColor: color }}
               />
-              <span className="text-sm font-semibold text-white">
-                {name || 'Nome da Categoria'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-white">
+                  {name || 'Nome da Categoria'}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider bg-graphite-800 text-graphite-300 border border-border">
+                  {categoryType === 'fixed'
+                    ? 'Fixo'
+                    : categoryType === 'credit_card'
+                    ? 'Cartão / Parcelas'
+                    : 'Variável'}
+                </span>
+              </div>
             </div>
             <span className="text-xs font-mono text-neon font-medium">
               Teto: {formatCurrency(parseFloat(budgetLimit.replace(',', '.')) || 0)}
             </span>
+          </div>
+
+          {/* Tipo de Categoria */}
+          <div>
+            <label className="block text-xs font-medium text-graphite-300 mb-1.5">
+              Tipo da Conta / Categoria <span className="text-expense">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setCategoryType('variable')}
+                className={`p-2.5 rounded-lg border text-left transition-all ${
+                  categoryType === 'variable'
+                    ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
+                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                  <ShoppingBag className="w-3.5 h-3.5 text-neon" />
+                  Variável
+                </div>
+                <p className="text-[10px] text-graphite-400 leading-tight">
+                  Dia a dia, mercado e gastos livres
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCategoryType('fixed')}
+                className={`p-2.5 rounded-lg border text-left transition-all ${
+                  categoryType === 'fixed'
+                    ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
+                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                  <Repeat className="w-3.5 h-3.5 text-blue-400" />
+                  Fixo Mensal
+                </div>
+                <p className="text-[10px] text-graphite-400 leading-tight">
+                  Escola, água, energia, internet
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCategoryType('credit_card')}
+                className={`p-2.5 rounded-lg border text-left transition-all ${
+                  categoryType === 'credit_card'
+                    ? 'border-neon bg-neon/10 text-white shadow-neon-sm'
+                    : 'border-border bg-graphite-900/60 text-graphite-400 hover:border-graphite-700'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-white">
+                  <CreditCard className="w-3.5 h-3.5 text-purple-400" />
+                  Cartão / Parcelas
+                </div>
+                <p className="text-[10px] text-graphite-400 leading-tight">
+                  Compras em 3x, 6x, 12x (Jarbas, Vadir...)
+                </p>
+              </button>
+            </div>
           </div>
 
           {/* Nome */}

@@ -27,6 +27,7 @@ export interface Database {
           color: string;
           icon: string;
           budget_limit: number;
+          category_type?: 'fixed' | 'credit_card' | 'variable';
           created_at: string;
           updated_at: string;
         };
@@ -37,6 +38,7 @@ export interface Database {
           color?: string;
           icon?: string;
           budget_limit?: number;
+          category_type?: 'fixed' | 'credit_card' | 'variable';
           created_at?: string;
           updated_at?: string;
         };
@@ -47,6 +49,7 @@ export interface Database {
           color?: string;
           icon?: string;
           budget_limit?: number;
+          category_type?: 'fixed' | 'credit_card' | 'variable';
           created_at?: string;
           updated_at?: string;
         };
@@ -254,4 +257,22 @@ export interface KPISummary {
   totalInvestedOrGoals: number;  // Valor acumulado em Metas
   pendingDebtsTotal: number;  // Total de dívidas pendentes
 }
+
+export interface CategoryInstallment {
+  id: string;
+  user_id: string;
+  category_id: string;
+  description: string;
+  installment_amount: number;
+  total_installments: number;
+  current_installment: number;
+  due_day?: number;
+  start_date: string;
+  status: 'active' | 'completed' | 'paused';
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  category?: Pick<Category, 'name' | 'color' | 'icon'> | null;
+}
+
 

@@ -71,11 +71,24 @@ O **FinPulse** é um ecossistema completo de gestão financeira pessoal e empres
 - **Gestão de Metas & Reservas (`/goals` e `GoalModal.tsx`):** Acompanhamento de progresso de reserva de emergência e objetivos com suporte a aportes progressivos.
 - **Gestão de Dívidas (`/debts` e `DebtModal.tsx`):** Acompanhamento de parcelas com cálculo automático de proximidade de vencimento.
 
-### Etapa 4: Responsividade Mobile Completa
-- **Drawer Lateral Off-Canvas:** Sidebar adaptativa que se recolhe em smartphones e desliza suavemente através do botão hamburger no Header.
-- **Backdrop com Desfoque:** Fundo translúcido com fechamento automático ao navegar.
-- **Header Inteligente:** Controles retráteis de busca, data resumida no mobile e botões compactos.
-- **Tabelas Fluídas:** Contêiner com rolagem horizontal protegida (`overflow-x-auto min-w-[620px]`), evitando quebra de layout em telas verticais.
+### Etapa 5: Categorias Fixas vs. Cartão de Crédito e Controle de Sub-Parcelas
+- **Distinção Tipológica de Categorias:**
+  - `fixed` (Custos Fixos Recorrentes: Escola, Casa/Água/Luz, Internet Tim).
+  - `credit_card` (Cartões de Crédito e Parcelados: Jarbas, Cartão Vadir, Moto Edison, Romario).
+  - `variable` (Despesas variáveis do dia a dia: Mercado, Transporte, Lazer).
+- **Tabela Relacional `category_installments`:**
+  - Armazena compras parceladas vinculadas a uma categoria (`category_id`).
+  - Campos: `description`, `installment_amount`, `total_installments`, `current_installment`, `due_day`, `start_date`, `status` (`active`, `completed`).
+- **Múltiplas Compras na Mesma Categoria (Exemplo Real: Jarbas):**
+  - Permite acumular compras na mesma fatura/pessoa (ex: R$ 500 em 6x + R$ 300 em 3x = R$ 800/mês).
+  - Motor de inteligência que detecta qual compra encerra primeiro, emitindo aviso de alívio financeiro (ex: R$ 300 encerra em 3 meses, reduzindo o compromisso mensal para R$ 500/mês).
+  - Matriz de projeção de desembolso mensal passo a passo (step-down timeline).
+- **Abatimento e Quitação em 1 Clique:**
+  - Endpoint `POST /api/finance/installments/pay` avança a parcela, marca como concluída quando atinge o total e registra a saída automaticamente no extrato contábil.
+- **Interface e Navegação:**
+  - Modal dedicado `CategoryInstallmentsModal.tsx` com visualização de compras ativas, histórico de quitadas e formulário de nova compra.
+  - Abas de filtro na página `/budgets` (Todas, Cartão / Parcelas, Fixas, Variáveis).
+  - Botão rápido de parcelas na barra `BudgetProgress.tsx`.
 
 ---
 
@@ -85,15 +98,17 @@ O **FinPulse** é um ecossistema completo de gestão financeira pessoal e empres
 c:\Finanças\
 ├── app/
 │   ├── api/finance/
-│   │   ├── categories/route.ts        # CRUD de Categorias & Limites
+│   │   ├── categories/route.ts        # CRUD de Categorias, Limites e Tipos (fixed/credit_card/variable)
 │   │   ├── debts/route.ts             # CRUD de Dívidas & Obrigações
 │   │   ├── goals/route.ts             # CRUD de Metas & Reserva
+│   │   ├── installments/route.ts      # CRUD de Compras Parceladas por Categoria
+│   │   ├── installments/pay/route.ts  # Abate rápido de parcela com lançamento no extrato
 │   │   ├── overview/route.ts          # Agregação geral do Dashboard
 │   │   └── transactions/route.ts      # Registro e exclusão de transações
 │   ├── api/sync/transactions/route.ts # Webhook n8n
 │   ├── api/alerts/check/route.ts      # Verificação periódica cron
 │   ├── analytics/page.tsx             # Indicadores avançados
-│   ├── budgets/page.tsx               # Orçamentos e gestão de categorias
+│   ├── budgets/page.tsx               # Orçamentos, abas por tipo e gestão de categorias/parcelas
 │   ├── debts/page.tsx                 # Dívidas e faturas com alertas
 │   ├── goals/page.tsx                 # Metas financeiras e reserva
 │   ├── settings/page.tsx              # Configurações de conexões e bot
@@ -101,23 +116,24 @@ c:\Finanças\
 │   └── page.tsx                       # Dashboard principal
 ├── components/
 │   ├── dashboard/
-│   │   ├── BudgetProgress.tsx         # Barra de progresso da regra de 80%
+│   │   ├── BudgetProgress.tsx         # Barra de progresso da regra de 80% e botão de parcelas
 │   │   ├── CashFlowChart.tsx          # Gráfico de Área (Fluxo de Caixa)
 │   │   ├── CategoryDonutChart.tsx     # Gráfico de Rosca de Despesas
-│   │   ├── CategoryModal.tsx          # Modal de criação e edição de categorias
+│   │   ├── CategoryInstallmentsModal.tsx # Modal de compras parceladas, projeção e alívio
+│   │   ├── CategoryModal.tsx          # Modal de criação/edição com seletor de tipo de categoria
 │   │   ├── DebtModal.tsx              # Modal de dívidas e obrigações
 │   │   ├── GoalModal.tsx              # Modal de metas e reserva
 │   │   ├── KPICards.tsx               # Indicadores de precisão contábil
 │   │   ├── NewTransactionModal.tsx    # Modal de nova transação
 │   │   └── TransactionTable.tsx       # Tabela de lançamentos responsiva
 │   ├── layout/
-│   │   ├── DashboardLayout.tsx        # Layout mestre com provider e modais
+│   │   ├── DashboardLayout.tsx        # Layout mestre com provider e modais centralizados
 │   │   ├── Header.tsx                 # Header com busca, período e hamburger
 │   │   ├── RightSidebar.tsx           # Painel lateral de patrimônio e alertas
 │   │   └── Sidebar.tsx                # Menu lateral com suporte a drawer mobile
 │   └── ui/                            # Componentes atômicos Shadcn UI
 ├── context/
-│   └── FinanceContext.tsx             # Provider React com estado global unificado
+│   └── FinanceContext.tsx             # Provider React com estado global unificado e suporte a parcelas
 ├── lib/
 │   ├── supabase.ts                    # Clientes anon e service_role
 │   ├── telegram.ts                    # Utilitário de disparo de mensagens
@@ -138,3 +154,5 @@ c:\Finanças\
 - **Hierarquia de Contexto no Next.js:** O hook `useFinance()` só pode ser executado em componentes filhos do `<FinanceProvider>`. Cada página modular (`app/budgets`, `app/goals`, `app/debts`) deve renderizar um componente de conteúdo interno encapsulado pelo `<DashboardLayout>`.
 - **Estratégia Mobile First para Dashboards Financeiros:** Dashboards com tabelas ricas e gráficos analíticos exigem `min-width` seguro nas tabelas com contêineres de scroll lateral suave (`overflow-x-auto`) e substituição do padding estático da sidebar por `pl-0 lg:pl-64`.
 - **Detecção de Intenções no Telegram:** Permitir que o usuário insira gastos naturais (ex: `45,90 Almoço`) sem a obrigatoriedade de barras (`/gasto`) aumenta drasticamente a taxa de adesão ao registro diário de despesas.
+- **Modelagem de Sub-Parcelas Acumuladas:** Agrupar compras parceladas sob a mesma categoria ou credor (ex: Jarbas ou Cartão Vadir) permite ao usuário manter um único teto orçamentário mensal enquanto rastreia o desdobramento e término individual de cada compra. A ordenação por menor tempo residual ($total - atual + 1$) entrega previsibilidade instantânea de alívio no orçamento.
+

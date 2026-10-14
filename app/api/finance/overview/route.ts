@@ -59,6 +59,13 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false });
     const goals = rawGoals || [];
 
+    // 4.1 Buscar Parcelas e Compromissos por Categoria
+    const { data: rawInstallments } = await supabaseAdmin
+      .from('category_installments')
+      .select('*, category:categories(name, color, icon)')
+      .order('due_day', { ascending: true });
+    const installments = rawInstallments || [];
+
     // 5. Cálculo dos KPIs
     let totalIncome = 0;
     let totalExpenses = 0;
@@ -196,6 +203,7 @@ export async function GET(req: NextRequest) {
       budgets,
       debts,
       goals,
+      installments,
       cashFlowData,
       categoryDistribution,
       alerts,

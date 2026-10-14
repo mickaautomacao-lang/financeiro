@@ -7,6 +7,7 @@ import { RightSidebar } from './RightSidebar';
 import { FinanceProvider, useFinance } from '@/context/FinanceContext';
 import { NewTransactionModal } from '@/components/dashboard/NewTransactionModal';
 import { CategoryModal } from '@/components/dashboard/CategoryModal';
+import { CategoryInstallmentsModal } from '@/components/dashboard/CategoryInstallmentsModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     setIsCategoryModalOpen,
     categoryToEdit,
     categories,
+    isInstallmentsModalOpen,
+    setIsInstallmentsModalOpen,
+    selectedCategoryForInstallments,
     refreshData,
   } = useFinance();
 
@@ -57,6 +61,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         onClose={() => setIsCategoryModalOpen(false)}
         categoryToEdit={categoryToEdit}
         onSuccess={refreshData}
+      />
+
+      {/* Modal de Detalhamento de Parcelas & Compras da Categoria */}
+      <CategoryInstallmentsModal
+        isOpen={isInstallmentsModalOpen}
+        onClose={() => setIsInstallmentsModalOpen(false)}
+        category={selectedCategoryForInstallments}
       />
     </div>
   );

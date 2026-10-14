@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, Plus, Pencil } from 'lucide-react';
+import { AlertTriangle, Plus, Pencil, CreditCard } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { useFinance } from '@/context/FinanceContext';
@@ -12,7 +12,8 @@ interface BudgetProgressProps {
 }
 
 export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgressProps) {
-  const { budgets, categories, openCategoryModal } = useFinance();
+  const { budgets, categories, installments, openCategoryModal, openInstallmentsModal } =
+    useFinance();
 
   const displayList = budgets.length > 0 ? budgets : categories.map((c) => ({
     category_id: c.id,
@@ -111,6 +112,21 @@ export function BudgetProgress({ limit = 5, showAddButton = true }: BudgetProgre
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
+
+                    {/* Botão de Ver Parcelas para Cartões/Parcelados */}
+                    {categoryData &&
+                      (categoryData.category_type === 'credit_card' ||
+                        installments.some((i) => i.category_id === categoryData.id && i.status === 'active')) && (
+                        <button
+                          type="button"
+                          onClick={() => openInstallmentsModal(categoryData)}
+                          title="Ver e Gerenciar Parcelas desta Categoria"
+                          className="px-1.5 py-0.5 text-[9px] font-semibold text-purple-300 bg-purple-500/15 border border-purple-500/30 rounded flex items-center gap-0.5 hover:bg-purple-500/25 transition-colors flex-shrink-0"
+                        >
+                          <CreditCard className="w-2.5 h-2.5 text-purple-400" />
+                          <span>Parcelas</span>
+                        </button>
+                      )}
 
                     {isWarning && (
                       <span className="inline-flex items-center gap-0.5 text-[9px] text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/30 whitespace-nowrap flex-shrink-0">
