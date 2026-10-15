@@ -16,6 +16,7 @@ import {
   Repeat,
   ShoppingBag,
   ExternalLink,
+  Check,
 } from 'lucide-react';
 import { useFinance } from '@/context/FinanceContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,8 +24,15 @@ import { formatCurrency } from '@/lib/utils';
 import { ICON_MAP } from '@/components/dashboard/CategoryModal';
 
 function BudgetsContent() {
-  const { categories, budgets, installments, transactions, openCategoryModal, openInstallmentsModal } =
-    useFinance();
+  const {
+    categories,
+    budgets,
+    installments,
+    transactions,
+    refreshData,
+    openCategoryModal,
+    openInstallmentsModal,
+  } = useFinance();
   const [natureTab, setNatureTab] = useState<'expense' | 'income'>('expense');
   const [filterType, setFilterType] = useState<string>('all');
 
@@ -431,7 +439,10 @@ function BudgetsContent() {
                             {cat.name}
                           </h4>
                           <div className="flex items-center justify-between text-xs text-graphite-400 font-mono mt-0.5">
-                            <span>Meta: {formatCurrency(limit)}</span>
+                            <span>
+                              {cat.category_type === 'fixed' ? 'Salário Líquido: ' : 'Meta: '}
+                              {formatCurrency(limit)}
+                            </span>
                             {cat.due_day && (
                               <span className="text-[11px] text-emerald-400">
                                 Cai dia {cat.due_day}
@@ -465,6 +476,47 @@ function BudgetsContent() {
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
                         </div>
+
+                        {/* Botão de Confirmação Rápida de Salário */}
+                        {cat.category_type === 'fixed' && limit > 0 && !isAchieved && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const now = new Date();
+                              const year = now.getFullYear();
+                              const month = String(now.getMonth() + 1).padStart(2, '0');
+                              const dayStr = cat.due_day
+                                ? String(Math.min(cat.due_day, 28)).padStart(2, '0')
+                                : '05';
+                              await fetch('/api/finance/transactions', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  type: 'income',
+                                  amount: limit,
+                                  description: cat.name,
+                                  category_id: cat.id,
+                                  date: `${year}-${month}-${dayStr}`,
+                                  entry_subtype: 'fixed',
+                                  status: 'completed',
+                                  payment_method: 'transferencia',
+                                }),
+                              });
+                              refreshData();
+                            }}
+                            className="w-full mt-2 py-1.5 px-2 text-xs font-semibold text-black bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5"
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Confirmar Salário no Caixa</span>
+                          </button>
+                        )}
+
+                        {cat.category_type === 'fixed' && limit > 0 && isAchieved && (
+                          <div className="w-full mt-2 py-1 px-2 text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span>Salário deste mês lançado no caixa</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

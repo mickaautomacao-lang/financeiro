@@ -408,7 +408,11 @@ export function NewTransactionModal({
             {/* 3. Valor */}
             <div>
               <label className="text-xs font-medium text-graphite-300 block mb-1">
-                Valor (R$) *
+                {type === 'income'
+                  ? entrySubtype === 'fixed'
+                    ? 'Valor do Salário / Recebimento (R$) *'
+                    : 'Valor do Freelance / Entrada (R$) *'
+                  : 'Valor da Despesa (R$) *'}
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-2 text-sm font-bold text-graphite-400">
@@ -454,8 +458,23 @@ export function NewTransactionModal({
               <select
                 value={categoryId}
                 onChange={(e) => {
-                  setCategoryId(e.target.value);
-                  if (e.target.value) setCustomCategory('');
+                  const selectedId = e.target.value;
+                  setCategoryId(selectedId);
+                  if (selectedId) {
+                    setCustomCategory('');
+                    const foundCat = categories.find((c) => c.id === selectedId);
+                    if (foundCat) {
+                      if (type === 'income' && foundCat.category_type === 'fixed') {
+                        setEntrySubtype('fixed');
+                        if (!description) setDescription(foundCat.name);
+                        if (!amount || amount === '0' || amount === '0,00') {
+                          if (foundCat.budget_limit > 0) {
+                            setAmount(String(foundCat.budget_limit));
+                          }
+                        }
+                      }
+                    }
+                  }
                 }}
                 className="w-full h-10 rounded-lg border border-border bg-graphite-900 px-3 text-xs text-graphite-100 focus:border-neon focus:outline-none"
               >

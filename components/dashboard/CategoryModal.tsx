@@ -77,6 +77,7 @@ export function CategoryModal({
   const [categoryType, setCategoryType] = useState<'variable' | 'fixed' | 'credit_card'>('variable');
   const [dueDay, setDueDay] = useState('10');
   const [closingDay, setClosingDay] = useState('5');
+  const [autoLaunchMonth, setAutoLaunchMonth] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +94,7 @@ export function CategoryModal({
       setCategoryType(categoryToEdit.category_type || 'variable');
       setDueDay(categoryToEdit.due_day ? String(categoryToEdit.due_day) : '10');
       setClosingDay(categoryToEdit.closing_day ? String(categoryToEdit.closing_day) : '5');
+      setAutoLaunchMonth(false);
     } else {
       setCategoryNature('expense');
       setName('');
@@ -102,6 +104,7 @@ export function CategoryModal({
       setCategoryType('variable');
       setDueDay('10');
       setClosingDay('5');
+      setAutoLaunchMonth(true);
     }
     setError(null);
   }, [categoryToEdit, isOpen]);
@@ -189,6 +192,35 @@ export function CategoryModal({
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Erro ao salvar categoria.');
+      }
+
+      // Se marcou para registrar recebimento do salário neste mês no caixa
+      if (autoLaunchMonth && numericLimit > 0 && categoryNature === 'income') {
+        try {
+          const savedCategoryId = isEditing ? categoryToEdit!.id : data.category?.id;
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const dayStr = dueDay ? String(Math.min(parseInt(dueDay), 28)).padStart(2, '0') : '05';
+          const transactionDate = `${year}-${month}-${dayStr}`;
+
+          await fetch('/api/finance/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'income',
+              amount: numericLimit,
+              description: name.trim() || 'Salário Mensal',
+              category_id: savedCategoryId,
+              date: transactionDate,
+              entry_subtype: categoryType,
+              status: 'completed',
+              payment_method: 'transferencia',
+            }),
+          });
+        } catch (txErr) {
+          console.error('Erro ao gerar transação automática de salário:', txErr);
+        }
       }
 
       if (onSuccess) onSuccess();
@@ -364,7 +396,11 @@ export function CategoryModal({
                 </span>
               )}
               <span className={categoryNature === 'income' ? 'text-emerald-400 font-medium' : 'text-neon font-medium'}>
-                {categoryNature === 'income' ? 'Previsão: ' : 'Teto: '}
+                {categoryNature === 'income'
+                  ? categoryType === 'fixed'
+                    ? 'Salário: '
+                    : 'Meta: '
+                  : 'Teto: '}
                 {formatCurrency(parseFloat(budgetLimit.replace(',', '.')) || 0)}
               </span>
             </div>
@@ -607,17 +643,22 @@ export function CategoryModal({
             </div>
           )}
 
-          {/* Teto Orçamentário ou Previsão de Renda */}
+          {/* Valor: Salário Líquido / Meta Freelance / Teto de Despesa */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium text-graphite-300">
+              <label className="text-xs font-semibold text-graphite-200">
                 {categoryNature === 'income'
-                  ? 'Previsão / Meta Mensal de Renda (R$)'
+                  ? categoryType === 'fixed'
+                    ? 'Valor do Salário Líquido Mensal (R$)'
+                    : 'Estimativa / Meta Média Mensal (R$)'
                   : 'Teto Orçamentário Mensal (R$)'}
+                <span className="text-expense ml-1">*</span>
               </label>
               <span className="text-[11px] text-graphite-400">
                 {categoryNature === 'income'
-                  ? 'Meta esperada no mês'
+                  ? categoryType === 'fixed'
+                    ? 'Quanto cai líquido na conta todo mês'
+                    : 'Expectativa média de ganhos'
                   : 'Dispara alerta Telegram a 80%'}
               </span>
             </div>
@@ -631,7 +672,13 @@ export function CategoryModal({
                 min="0"
                 value={budgetLimit}
                 onChange={(e) => setBudgetLimit(e.target.value)}
-                placeholder="0,00"
+                placeholder={
+                  categoryNature === 'income'
+                    ? categoryType === 'fixed'
+                      ? 'Ex: 3500,00'
+                      : 'Ex: 1500,00'
+                    : '0,00'
+                }
                 className={`w-full pl-10 pr-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white placeholder-graphite-500 focus:outline-none transition-colors font-mono ${
                   categoryNature === 'income'
                     ? 'focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
@@ -639,7 +686,36 @@ export function CategoryModal({
                 }`}
               />
             </div>
+            {categoryNature === 'income' && categoryType === 'fixed' && (
+              <p className="text-[10px] text-graphite-400 mt-1">
+                Informe o valor exato que cai na sua conta todo dia {dueDay || '5'}.
+              </p>
+            )}
           </div>
+
+          {/* Opção Inteligente: Lançar no Saldo deste mês */}
+          {categoryNature === 'income' && categoryType === 'fixed' && (
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl space-y-1.5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-white">
+                    Lançar no Saldo deste mês agora?
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={autoLaunchMonth}
+                  onChange={(e) => setAutoLaunchMonth(e.target.checked)}
+                  className="h-4 w-4 rounded accent-emerald-500 cursor-pointer"
+                />
+              </div>
+              <p className="text-[11px] text-emerald-300/80 leading-relaxed">
+                {autoLaunchMonth
+                  ? `✓ Ao salvar, registrará a entrada de R$ ${budgetLimit || '0,00'} no caixa deste mês no dia ${dueDay || '5'}.`
+                  : 'Deixe desmarcado se você prefere registrar manualmente na tela de Nova Transação.'}
+              </p>
+            </div>
+          )}
 
           {/* Seletor de Cores */}
           <div>
