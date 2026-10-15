@@ -156,8 +156,9 @@ c:\Finanças\
 - **Detecção de Intenções no Telegram:** Permitir que o usuário insira gastos naturais (ex: `45,90 Almoço`) sem a obrigatoriedade de barras (`/gasto`) aumenta drasticamente a taxa de adesão ao registro diário de despesas.
 - **Modelagem de Sub-Parcelas Acumuladas:** Agrupar compras parceladas sob a mesma categoria ou credor (ex: Jarbas ou Cartão Vadir) permite ao usuário manter um único teto orçamentário mensal enquanto rastreia o desdobramento e término individual de cada compra. A ordenação por menor tempo residual ($total - atual + 1$) entrega previsibilidade instantânea de alívio no orçamento.
 - **Classificação Sênior de Natureza Financeira (`category_nature`):** O sistema agora segrega rigorosamente as categorias entre `expense` (Despesa / Teto de Gastos) e `income` (Receita / Meta de Renda). Quando o usuário lança uma **Receita**, o seletor filtra exclusivamente categorias de entrada (`Salário & Renda Fixa`, `Freelance & Projetos`, `Investimentos & Dividendos`, etc.) e habilita a sub-classificação entre **Entrada Fixa** (CLT, Pró-Labore), **Freelance** (Contratos pontuais, Serviços) e **Rendimentos / Outros**. Ao lançar uma **Despesa**, filtra categorias de saída com sub-classificação entre **Custo Fixo Mensal**, **Cartão / Parcelas** e **Gastos Variáveis**.
-- **Gestão Integrada de Orçamentos e Metas de Renda (`app/budgets`):** A página de orçamentos dispõe de abas contextuais dedicadas para Despesas e Receitas, permitindo acompanhar o cumprimento da meta de renda mensal com taxa de realização em tempo real e visualização de dias previstos de recebimento.
+- **Diferenciação Semântica de Salário Líquido vs Metas Abstratas (15/10/2026):** Categorias de entrada fixa (como Salário CLT e Pró-Labore) exigem comunicação direta sem ambiguidades: em vez de rótulos como "Previsão / Meta", o sistema adota "Valor do Salário Líquido Mensal (R$)" com auto-preenchimento no lançamento de transações e a opção inteligente de registrar imediatamente a entrada no caixa do mês corrente, além do botão de confirmação com 1 clique ("Confirmar Salário no Caixa") na página de orçamentos.
 
 ---
+
 
 
