@@ -158,7 +158,19 @@ c:\Finanças\
 - **Classificação Sênior de Natureza Financeira (`category_nature`):** O sistema agora segrega rigorosamente as categorias entre `expense` (Despesa / Teto de Gastos) e `income` (Receita / Meta de Renda). Quando o usuário lança uma **Receita**, o seletor filtra exclusivamente categorias de entrada (`Salário & Renda Fixa`, `Freelance & Projetos`, `Investimentos & Dividendos`, etc.) e habilita a sub-classificação entre **Entrada Fixa** (CLT, Pró-Labore), **Freelance** (Contratos pontuais, Serviços) e **Rendimentos / Outros**. Ao lançar uma **Despesa**, filtra categorias de saída com sub-classificação entre **Custo Fixo Mensal**, **Cartão / Parcelas** e **Gastos Variáveis**.
 - **Diferenciação Semântica de Salário Líquido vs Metas Abstratas (15/10/2026):** Categorias de entrada fixa (como Salário CLT e Pró-Labore) exigem comunicação direta sem ambiguidades: em vez de rótulos como "Previsão / Meta", o sistema adota "Valor do Salário Líquido Mensal (R$)" com auto-preenchimento no lançamento de transações e a opção inteligente de registrar imediatamente a entrada no caixa do mês corrente, além do botão de confirmação com 1 clique ("Confirmar Salário no Caixa") na página de orçamentos.
 
+> **Data:** 17/10/2026
+
+- **Fluxo Ponta a Ponta de Renda Fixa & Previsibilidade de Caixa:**
+  - **Identificação Exata:** Categorias de receita fixa (`category_nature = 'income'` e `category_type = 'fixed'`) agora operam com foco no salário real líquido recebido.
+  - **Lançamento Automático no Caixa:** No `CategoryModal`, o toggle inteligente `[ ✓ ] Lançar no Saldo deste mês agora?` permite que o usuário, ao definir o salário de R$ 3.500,00 e o dia 5, já crie atomicamente a transação de entrada no mês corrente sem etapas manuais redundantes.
+  - **Botão de Ação Rápida em Orçamentos (`/budgets`):** Caso o mês ainda não registre o salário esperado, o card de receitas exibe `[ ✓ Confirmar Salário no Caixa ]`, permitindo liquidar o recebimento com um único clique.
+  - **Auto-Preenchimento em Lançamentos:** Em `NewTransactionModal`, ao selecionar a categoria de Salário, o sistema automaticamente preenche o valor cadastrado na categoria e a descrição, acelerando o registro financeiro.
+- **Resiliência Client-Side em Deploys na Nuvem (Vercel):**
+  - Implementação de laço com auto-retry e intervalo de 800ms em requisições de formulários (`fetch`), mitigando erros transitórios de rede (`Failed to fetch`) causados por reciclagem de serverless functions durante rollouts de deploy.
+  - Mensagens amigáveis e explicativas em caso de instabilidade na conexão, eliminando telas travadas para o usuário final.
+
 ---
+
 
 
 
