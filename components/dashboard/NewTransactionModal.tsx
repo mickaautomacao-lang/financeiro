@@ -1,6 +1,6 @@
                                                                                                                                                                                                                                                                                                       'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Plus,
@@ -20,6 +20,8 @@ import {
   QrCode,
   Clock,
   Trash2,
+  Check,
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,46 +112,78 @@ export function NewTransactionModal({
     setIsSuccess(false);
   }, [transactionToEdit, isOpen]);
 
-  // Filtrar categorias conforme o Tipo selecionado (Receita vs Despesa)
-  const filteredCategories = categories.filter((cat) => {
-    if (type === 'income') {
-      return cat.category_nature === 'income';
-    }
-    return cat.category_nature !== 'income';
-  });
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>('all');
+  const [categorySearch, setCategorySearch] = useState<string>('');
 
-  // Ajustar defaults inteligentes ao trocar de Tipo ou Subtipo
-  useEffect(() => {
-    if (type === 'income') {
-      if (entrySubtype === 'credit_card') {
-        setEntrySubtype('fixed');
+  // Filtrar categorias conforme o Tipo selecionado (Receita vs Despesa)
+  const filteredCategories = useMemo(() => {
+    return (categories || []).filter((cat) => {
+      if (type === 'income') {
+        return cat.category_nature === 'income';
       }
-      // Auto-selecionar categoria de receita correspondente
-      const targetCat = filteredCategories.find((c) => {
-        if (entrySubtype === 'fixed') return c.name.toLowerCase().includes('salário') || c.category_type === 'fixed';
-        if (entrySubtype === 'freelance') return c.name.toLowerCase().includes('freelance');
-        return c.name.toLowerCase().includes('investimento') || c.category_type === 'variable';
-      });
-      if (targetCat) {
-        setCategoryId(targetCat.id);
+      return cat.category_nature !== 'income';
+    });
+  }, [categories, type]);
+
+  // Grupos únicos disponíveis no tipo selecionado
+  const availableGroups = useMemo(() => {
+    const set = new Set<string>();
+    filteredCategories.forEach((c) => {
+      if (c.group_name) set.add(c.group_name);
+    });
+    return Array.from(set);
+  }, [filteredCategories]);
+
+  // Categorias visíveis nos atalhos com filtro de gaveta e busca
+  const visibleCategories = useMemo(() => {
+    return filteredCategories.filter((cat) => {
+      if (selectedGroupFilter !== 'all' && cat.group_name !== selectedGroupFilter) {
+        return false;
       }
-      setPaymentMethod('Pix');
-      setIsInstallment(false);
-    } else {
-      // Para despesa
-      if (entrySubtype === 'freelance' || entrySubtype === 'investments') {
-        setEntrySubtype('variable');
+      if (categorySearch.trim()) {
+        const q = categorySearch.toLowerCase();
+        return (
+          cat.name.toLowerCase().includes(q) ||
+          (cat.group_name && cat.group_name.toLowerCase().includes(q))
+        );
       }
-      if (entrySubtype === 'credit_card') {
-        setPaymentMethod('Cartão de Crédito');
-        const cardCat = filteredCategories.find((c) => c.category_type === 'credit_card');
-        if (cardCat) setCategoryId(cardCat.id);
-      } else if (entrySubtype === 'fixed') {
-        const fixedCat = filteredCategories.find((c) => c.category_type === 'fixed');
-        if (fixedCat) setCategoryId(fixedCat.id);
-      }
+      return true;
+    });
+  }, [filteredCategories, selectedGroupFilter, categorySearch]);
+
+  // Função central para selecionar categoria com segurança e sem sobrescrita
+  const handleSelectCategory = (cat: Category) => {
+    setCategoryId(cat.id);
+    setCustomCategory('');
+
+    // Sincroniza subtipo conforme a categoria
+    if (cat.category_type) {
+      setEntrySubtype(cat.category_type);
     }
-  }, [type, entrySubtype]);
+
+    // Se for cartão de crédito, ativa modo cartão
+    if (cat.category_type === 'credit_card') {
+      setPaymentMethod('Cartão de Crédito');
+    }
+
+    // Preenche chave Pix se a categoria possuir
+    if (cat.pix_key) {
+      setPixKey(cat.pix_key);
+    }
+    if (cat.payment_info) {
+      setPaymentInfo(cat.payment_info);
+    }
+
+    // Se descrição estiver vazia, usa o nome da categoria
+    if (!description.trim()) {
+      setDescription(cat.name);
+    }
+
+    // Se for receita com teto/salário definido e o valor estiver zerado, sugere o valor
+    if (type === 'income' && cat.budget_limit > 0 && (!amount || amount === '0' || amount === '0,00')) {
+      setAmount(String(cat.budget_limit));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -495,48 +529,145 @@ export function NewTransactionModal({
               )}
             </div>
 
-            {/* Atalhos Rápidos para Despesas (ex: Supermercado 200) */}
-            {type === 'expense' && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-medium text-graphite-400">
-                    Atalhos Rápidos de Gastos:
+            {/* 2. Atalhos Rápidos com TODAS as Categorias Reais */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold text-graphite-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-neon" />
+                  <span>
+                    Atalhos de Categorias ({filteredCategories.length} disponíveis)
                   </span>
-                  <span className="text-[10px] text-graphite-500">1-clique para preencher</span>
-                </div>
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                  {[
-                    { label: 'Supermercado', icon: '🛒', catKw: 'alimenta' },
-                    { label: 'Feira Livre', icon: '🥬', catKw: 'alimenta' },
-                    { label: 'Combustível', icon: '⛽', catKw: 'transporte' },
-                    { label: 'Delivery / Lanche', icon: '🍔', catKw: 'alimenta' },
-                    { label: 'Farmácia', icon: '💊', catKw: 'saúde' },
-                    { label: 'Escola', icon: '🏫', catKw: 'escola' },
-                    { label: 'Luz / Energia', icon: '⚡', catKw: 'casa' },
-                  ].map((preset) => (
+                </label>
+                <span className="text-[10px] text-graphite-500">
+                  Clique para preencher em 1 toque
+                </span>
+              </div>
+
+              {/* Filtro por Gavetas */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroupFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all shrink-0 ${
+                    selectedGroupFilter === 'all'
+                      ? 'bg-white text-black font-semibold shadow-sm'
+                      : 'bg-graphite-900 text-graphite-400 hover:text-white border border-border'
+                  }`}
+                >
+                  Todas ({filteredCategories.length})
+                </button>
+                {availableGroups.map((group) => {
+                  const isSelected = selectedGroupFilter === group;
+                  const count = filteredCategories.filter((c) => c.group_name === group).length;
+                  return (
                     <button
-                      key={preset.label}
+                      key={group}
                       type="button"
-                      onClick={() => {
-                        setDescription(preset.label);
-                        const target = filteredCategories.find(
-                          (c) =>
-                            c.name.toLowerCase().includes(preset.catKw) ||
-                            c.name.toLowerCase().includes(preset.label.toLowerCase())
-                        );
-                        if (target) {
-                          setCategoryId(target.id);
-                          if (target.category_type) setEntrySubtype(target.category_type);
-                          if (target.pix_key) setPixKey(target.pix_key);
-                        }
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-graphite-900 border border-border/80 text-graphite-300 hover:text-white hover:border-graphite-600 transition-all text-xs whitespace-nowrap flex items-center gap-1 shrink-0"
+                      onClick={() => setSelectedGroupFilter(isSelected ? 'all' : group)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all shrink-0 border ${
+                        isSelected
+                          ? 'bg-neon/20 text-neon border-neon font-semibold'
+                          : 'bg-graphite-900 text-graphite-300 hover:text-white border-border'
+                      }`}
                     >
-                      <span>{preset.icon}</span>
-                      <span>{preset.label}</span>
+                      <span>{group}</span>
+                      <span className="text-[10px] opacity-75 ml-1">({count})</span>
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+
+              {/* Campo de Busca Rápida se houver muitas categorias */}
+              {filteredCategories.length > 6 && (
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-graphite-500" />
+                  <input
+                    type="text"
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    placeholder="Filtrar categoria por nome..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-graphite-900/70 border border-border/80 rounded-lg text-xs text-white placeholder-graphite-600 focus:outline-none focus:border-neon transition-colors"
+                  />
+                  {categorySearch && (
+                    <button
+                      type="button"
+                      onClick={() => setCategorySearch('')}
+                      className="absolute right-2.5 top-2 text-xs text-graphite-500 hover:text-white"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
+              )}
+
+              {/* Grade de Chips de TODAS as Categorias */}
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1.5 rounded-xl bg-graphite-950/60 border border-border/60">
+                {visibleCategories.length === 0 ? (
+                  <div className="w-full py-4 text-center text-xs text-graphite-500">
+                    Nenhuma categoria encontrada para o filtro.
+                  </div>
+                ) : (
+                  visibleCategories.map((cat) => {
+                    const isSelected = categoryId === cat.id;
+                    const limit = parseFloat(String(cat.budget_limit || 0));
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => handleSelectCategory(cat)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shrink-0 border text-left ${
+                          isSelected
+                            ? 'bg-neon text-graphite-950 font-bold border-neon shadow-neon-sm ring-1 ring-neon'
+                            : 'bg-graphite-900/90 text-graphite-200 hover:text-white hover:bg-graphite-800 border-border/80'
+                        }`}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: isSelected ? '#000000' : cat.color || '#A3E635',
+                          }}
+                        />
+                        <span className="truncate max-w-[170px]">{cat.name}</span>
+                        {limit > 0 && (
+                          <span
+                            className={`text-[10px] font-mono px-1 rounded ${
+                              isSelected
+                                ? 'bg-black/20 text-graphite-950 font-bold'
+                                : 'text-graphite-400 bg-graphite-800/80'
+                            }`}
+                          >
+                            R$ {limit >= 1000 ? `${(limit / 1000).toFixed(limit % 1000 === 0 ? 0 : 1)}k` : limit}
+                          </span>
+                        )}
+                        {isSelected && <Check className="w-3.5 h-3.5 ml-0.5 text-black" />}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Categoria Ativa / Confirmação Visual */}
+            {categoryId && (
+              <div className="p-2.5 rounded-xl bg-neon/10 border border-neon/30 flex items-center justify-between text-xs animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-neon shrink-0" />
+                  <div>
+                    <span className="text-white font-semibold">
+                      {categories.find((c) => c.id === categoryId)?.name || 'Categoria Selecionada'}
+                    </span>
+                    <span className="text-[11px] text-graphite-400 ml-2">
+                      ({categories.find((c) => c.id === categoryId)?.group_name || 'Gaveta'})
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCategoryId('')}
+                  className="text-[11px] text-graphite-400 hover:text-expense underline"
+                >
+                  Trocar
+                </button>
               </div>
             )}
 
@@ -579,14 +710,14 @@ export function NewTransactionModal({
               />
             </div>
 
-            {/* 5. Categoria Filtrada Conforme Tipo */}
+            {/* 5. Seletor Clássico Dropdown com Optgroups (Alternativa) */}
             <div>
               <label className="text-xs font-medium text-graphite-300 block mb-1 flex items-center justify-between">
                 <span>
-                  {type === 'income' ? 'Categoria da Receita' : 'Categoria da Despesa'} *
+                  {type === 'income' ? 'Categoria da Receita' : 'Categoria da Despesa'} (Lista Suspensa)
                 </span>
                 <span className="text-[10px] text-graphite-400">
-                  {filteredCategories.length} disponíveis
+                  {filteredCategories.length} cadastradas
                 </span>
               </label>
 
@@ -594,27 +725,13 @@ export function NewTransactionModal({
                 value={categoryId}
                 onChange={(e) => {
                   const selectedId = e.target.value;
-                  setCategoryId(selectedId);
-                  if (selectedId) {
-                    setCustomCategory('');
-                    const foundCat = categories.find((c) => c.id === selectedId);
-                    if (foundCat) {
-                      if (foundCat.pix_key && !pixKey) {
-                        setPixKey(foundCat.pix_key);
-                      }
-                      if (foundCat.payment_info && !paymentInfo) {
-                        setPaymentInfo(foundCat.payment_info);
-                      }
-                      if (type === 'income' && foundCat.category_type === 'fixed') {
-                        setEntrySubtype('fixed');
-                        if (!description) setDescription(foundCat.name);
-                        if (!amount || amount === '0' || amount === '0,00') {
-                          if (foundCat.budget_limit > 0) {
-                            setAmount(String(foundCat.budget_limit));
-                          }
-                        }
-                      }
-                    }
+                  if (!selectedId) {
+                    setCategoryId('');
+                    return;
+                  }
+                  const foundCat = categories.find((c) => c.id === selectedId);
+                  if (foundCat) {
+                    handleSelectCategory(foundCat);
                   }
                 }}
                 className="w-full h-10 rounded-lg border border-border bg-graphite-900 px-3 text-xs text-graphite-100 focus:border-neon focus:outline-none"

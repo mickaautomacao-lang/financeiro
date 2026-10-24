@@ -198,6 +198,10 @@ c:\Finanças\
   - **Criação de Gavetas Personalizadas:** No `CategoryModal`, o seletor agora inclui `➕ Criar nova gaveta personalizada...`, permitindo ao usuário criar livremente qualquer centro de custos que desejar.
   - **Arquitetura Cognitiva de Nomenclatura:** Atualizado o menu lateral de **"Orçamentos"** para **"Planejamento & Tetos"**. Sob a ótica de educação financeira, elimina a confusão com "Despesas do Mês": uma página é para a execução e liquidação de contas diárias, enquanto a outra é para parametrização estratégica de limites, tetos e previsões.
   - **Correção Visual de Espaçamento:** Ajustado layout dos cards de orçamento em `/budgets`, separando Teto e Vencimento com badges e espaçamentos fluidos (`gap-1.5`), eliminando textos colados.
+  - **Atalhos Rápidos de Todas as Categorias & Resolução de Seleção em Transações:**
+    - Resolvido o conflito no `NewTransactionModal` onde um `useEffect` de auto-seleção de subtipo sobrescrevia e impedia a escolha livre de categorias no dropdown.
+    - Expandida a seção de atalhos rápidos: substituídos os 7 atalhos estáticos arbitrários por **todas as 14 categorias reais do usuário**, organizadas em abas por Macro-Gaveta patrimonial com busca em tempo real.
+    - Introduzida seleção instantânea em 1 clique com cards interativos luminosos (`Neon Lime` com check de confirmação), preenchimento automático inteligente de subtipo, forma de pagamento, dados Pix e sincronização bidirecional com a lista suspensa `<select>`.
 
 ---
 
