@@ -18,12 +18,18 @@ import {
   ExternalLink,
   Check,
   Receipt,
+  CheckCircle2,
+  GripVertical,
+  ArrowRightLeft,
+  X,
 } from 'lucide-react';
 import { useFinance } from '@/context/FinanceContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { ICON_MAP } from '@/components/dashboard/CategoryModal';
 import { EditGroupModal } from '@/components/dashboard/EditGroupModal';
+import { QuickExpenseModal } from '@/components/dashboard/QuickExpenseModal';
+import type { Category } from '@/types/database.types';
 
 const GROUP_ORDER = [
   'Moradia & Habitação',
@@ -123,6 +129,37 @@ function BudgetsContent() {
   const [natureTab, setNatureTab] = useState<'expense' | 'income'>('expense');
   const [filterType, setFilterType] = useState<string>('all');
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [payingCategory, setPayingCategory] = useState<Category | null>(null);
+  const [draggedCatId, setDraggedCatId] = useState<string | null>(null);
+  const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
+  const [isMovingCategory, setIsMovingCategory] = useState(false);
+  const [movingCategoryTarget, setMovingCategoryTarget] = useState<Category | null>(null);
+
+  const handleMoveCategoryToGroup = async (catId: string, targetGroup: string) => {
+    const targetCat = categories.find((c) => c.id === catId);
+    if (!targetCat || targetCat.group_name === targetGroup) return;
+
+    setIsMovingCategory(true);
+    try {
+      const res = await fetch('/api/finance/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: catId,
+          group_name: targetGroup,
+        }),
+      });
+      if (res.ok) {
+        await refreshData();
+      }
+    } catch (err) {
+      console.error('Erro ao mover categoria de gaveta:', err);
+    } finally {
+      setIsMovingCategory(false);
+      setDraggedCatId(null);
+      setDragOverGroup(null);
+    }
+  };
 
   // Separar categorias por natureza
   const expenseCategories = categories.filter((c) => c.category_nature !== 'income');
@@ -479,6 +516,11 @@ function BudgetsContent() {
             <div className="space-y-8">
               {activeGroups.map(([group, cats]) => {
                 const meta = getGroupMeta(group);
+                const isDropTarget =
+                  dragOverGroup === group &&
+                  draggedCatId &&
+                  !cats.some((c) => c.id === draggedCatId);
+
                 const groupLimit = cats.reduce(
                   (sum, c) => sum + (parseFloat(String(c.budget_limit)) || 0),
                   0
@@ -490,7 +532,37 @@ function BudgetsContent() {
                 const groupPct = groupLimit > 0 ? (groupSpent / groupLimit) * 100 : 0;
 
                 return (
-                  <div key={group} className="space-y-3">
+                  <div
+                    key={group}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dragOverGroup !== group) {
+                        setDragOverGroup(group);
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                      if (dragOverGroup === group) {
+                        setDragOverGroup(null);
+                      }
+                    }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      const droppedCatId =
+                        e.dataTransfer.getData('text/plain') || draggedCatId;
+                      setDragOverGroup(null);
+                      setDraggedCatId(null);
+                      if (droppedCatId) {
+                        await handleMoveCategoryToGroup(droppedCatId, group);
+                      }
+                    }}
+                    className={`space-y-3 p-3 rounded-2xl transition-all duration-200 ${
+                      isDropTarget
+                        ? 'border-2 border-dashed border-neon bg-neon/10 shadow-neon-sm scale-[1.01]'
+                        : 'border border-transparent'
+                    }`}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/70 pb-2.5">
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg">{meta.icon}</span>
@@ -528,6 +600,14 @@ function BudgetsContent() {
                       </div>
                     </div>
 
+                    {/* Banner Informativo Drop Zone (Kanban) */}
+                    {isDropTarget && (
+                      <div className="py-2.5 px-4 rounded-xl bg-neon/20 border border-neon/50 text-neon font-bold text-xs flex items-center justify-center gap-2 animate-pulse">
+                        <ArrowRightLeft className="w-4 h-4" />
+                        <span>Solte o card aqui para mover para a gaveta "{group}"</span>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {cats.map((cat) => {
                         const isIncome = natureTab === 'income';
@@ -547,23 +627,43 @@ function BudgetsContent() {
 
                   const pct = limit > 0 ? (received / limit) * 100 : 0;
                   const isAchieved = pct >= 100;
+                  const isBeingDragged = draggedCatId === cat.id;
 
                   return (
                     <div
                       key={cat.id}
-                      className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between hover:border-emerald-500/50 transition-all group relative overflow-hidden"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', cat.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedCatId(cat.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedCatId(null);
+                        setDragOverGroup(null);
+                      }}
+                      className={`bg-surface border rounded-xl p-4 flex flex-col justify-between hover:border-emerald-500/50 transition-all group relative overflow-hidden cursor-grab active:cursor-grabbing select-none ${
+                        isBeingDragged
+                          ? 'opacity-40 border-neon scale-95 shadow-neon-sm'
+                          : 'border-border'
+                      }`}
                     >
                       <div>
                         {/* Top row */}
                         <div className="flex items-start justify-between">
-                          <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
-                            style={{
-                              backgroundColor: `${cat.color || '#10B981'}20`,
-                              color: cat.color || '#10B981',
-                            }}
-                          >
-                            <IconComponent className="w-4 h-4" />
+                          <div className="flex items-center gap-1.5">
+                            <div
+                              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+                              style={{
+                                backgroundColor: `${cat.color || '#10B981'}20`,
+                                color: cat.color || '#10B981',
+                              }}
+                            >
+                              <IconComponent className="w-4 h-4" />
+                            </div>
+                            <span title="Arraste para mover para outra gaveta">
+                              <GripVertical className="w-3.5 h-3.5 text-graphite-600 group-hover:text-graphite-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+                            </span>
                           </div>
 
                           <div className="flex items-center gap-1">
@@ -576,6 +676,15 @@ function BudgetsContent() {
                             >
                               {cat.category_type === 'fixed' ? 'Entrada Fixa' : 'Freelance / Outros'}
                             </span>
+
+                            <button
+                              type="button"
+                              onClick={() => setMovingCategoryTarget(cat)}
+                              title="Mover de gaveta"
+                              className="p-1.5 rounded-lg text-graphite-400 hover:text-white hover:bg-graphite-800 transition-colors"
+                            >
+                              <ArrowRightLeft className="w-3.5 h-3.5" />
+                            </button>
 
                             <button
                               onClick={() => openCategoryModal(cat)}
@@ -702,23 +811,43 @@ function BudgetsContent() {
 
                 const isCreditCardOrInstallment =
                   cat.category_type === 'credit_card' || catInstallments.length > 0;
+                const isBeingDragged = draggedCatId === cat.id;
 
                 return (
                   <div
                     key={cat.id}
-                    className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between hover:border-graphite-600 transition-all group relative overflow-hidden"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', cat.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDraggedCatId(cat.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedCatId(null);
+                      setDragOverGroup(null);
+                    }}
+                    className={`bg-surface border rounded-xl p-4 flex flex-col justify-between hover:border-graphite-600 transition-all group relative overflow-hidden cursor-grab active:cursor-grabbing select-none ${
+                      isBeingDragged
+                        ? 'opacity-40 border-neon scale-95 shadow-neon-sm'
+                        : 'border-border'
+                    }`}
                   >
                     <div>
                       {/* Top row */}
                       <div className="flex items-start justify-between">
-                        <div
-                          className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
-                          style={{
-                            backgroundColor: `${cat.color || '#A3E635'}20`,
-                            color: cat.color || '#A3E635',
-                          }}
-                        >
-                          <IconComponent className="w-4 h-4" />
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+                            style={{
+                              backgroundColor: `${cat.color || '#A3E635'}20`,
+                              color: cat.color || '#A3E635',
+                            }}
+                          >
+                            <IconComponent className="w-4 h-4" />
+                          </div>
+                          <span title="Arraste para mover para outra gaveta">
+                            <GripVertical className="w-3.5 h-3.5 text-graphite-600 group-hover:text-graphite-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -738,6 +867,15 @@ function BudgetsContent() {
                               ? 'Cartão'
                               : 'Variável'}
                           </span>
+
+                          <button
+                            type="button"
+                            onClick={() => setMovingCategoryTarget(cat)}
+                            title="Mover de gaveta"
+                            className="p-1.5 rounded-lg text-graphite-400 hover:text-white hover:bg-graphite-800 transition-colors"
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                          </button>
 
                           <button
                             onClick={() => openCategoryModal(cat)}
@@ -837,11 +975,39 @@ function BudgetsContent() {
                         </button>
                       )}
 
+                      {/* Botão de Ação Direta: Marcar como Pago / Registrar Despesa */}
+                      {spent > 0 ? (
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <div className="flex-1 py-1.5 px-2 text-xs font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-lg flex items-center justify-center gap-1.5 shadow-sm">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="truncate">Pago: {formatCurrency(spent)}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPayingCategory(cat)}
+                            title="Registrar outro pagamento nesta conta"
+                            className="py-1.5 px-2.5 rounded-lg text-xs font-semibold text-white bg-graphite-900 hover:bg-graphite-800 border border-border/80 hover:border-emerald-500/50 transition-colors flex items-center gap-1 shrink-0"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Pagar</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setPayingCategory(cat)}
+                          className="w-full mt-2 py-2 px-3 text-xs font-bold text-graphite-950 bg-neon hover:bg-neon/90 rounded-lg shadow-neon-sm transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <Check className="w-4 h-4 stroke-[3]" />
+                          <span>Marcar como Pago</span>
+                        </button>
+                      )}
+
                       {/* Botão para Extrato de Compras Detalhado (Ex: Compras da Feira, Mercado, Contas) */}
                       <button
                         type="button"
                         onClick={() => openCategoryTransactionsModal(cat)}
-                        className="w-full mt-2 py-1.5 px-2.5 text-xs font-medium text-graphite-300 hover:text-white bg-graphite-900/80 hover:bg-graphite-800 border border-border/80 hover:border-neon/40 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        className="w-full mt-1.5 py-1.5 px-2.5 text-xs font-medium text-graphite-300 hover:text-white bg-graphite-900/80 hover:bg-graphite-800 border border-border/80 hover:border-neon/40 rounded-lg transition-colors flex items-center justify-center gap-1.5"
                       >
                         <Receipt className="w-3.5 h-3.5 text-neon" />
                         <span>Extrato de Compras & Pagamentos</span>
@@ -870,6 +1036,67 @@ function BudgetsContent() {
         onClose={() => setEditingGroup(null)}
         currentGroupName={editingGroup || ''}
       />
+
+      {/* Modal de Pagamento Rápido de Despesa */}
+      <QuickExpenseModal
+        isOpen={Boolean(payingCategory)}
+        onClose={() => setPayingCategory(null)}
+        category={payingCategory}
+      />
+
+      {/* Mini-Modal de Mover Categoria para Outra Gaveta (Kanban / Touch) */}
+      {movingCategoryTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-surface border border-border rounded-2xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3">
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="w-4 h-4 text-neon" />
+                <h4 className="text-sm font-bold text-white">Mover de Gaveta (Kanban)</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMovingCategoryTarget(null)}
+                className="text-graphite-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div>
+              <p className="text-xs text-graphite-300 mb-2.5">
+                Escolha a nova gaveta de <strong>{movingCategoryTarget.name}</strong>:
+              </p>
+              <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                {GROUP_ORDER.filter((g) => g !== 'Fontes de Renda').map((targetG) => {
+                  const isCurrent = movingCategoryTarget.group_name === targetG;
+                  const meta = getGroupMeta(targetG);
+                  return (
+                    <button
+                      key={targetG}
+                      type="button"
+                      disabled={isCurrent || isMovingCategory}
+                      onClick={async () => {
+                        await handleMoveCategoryToGroup(movingCategoryTarget.id, targetG);
+                        setMovingCategoryTarget(null);
+                      }}
+                      className={`w-full p-2.5 rounded-xl border text-left text-xs font-medium flex items-center justify-between transition-colors ${
+                        isCurrent
+                          ? 'border-neon/40 bg-neon/10 text-white font-semibold cursor-default'
+                          : 'border-border bg-graphite-900/60 text-graphite-300 hover:text-white hover:bg-graphite-800'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{meta.icon}</span>
+                        <span>{targetG}</span>
+                      </span>
+                      {isCurrent && <span className="text-[10px] text-neon">Atual</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

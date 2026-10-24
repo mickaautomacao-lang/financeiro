@@ -203,6 +203,29 @@ c:\Finanças\
     - Expandida a seção de atalhos rápidos: substituídos os 7 atalhos estáticos arbitrários por **todas as 14 categorias reais do usuário**, organizadas em abas por Macro-Gaveta patrimonial com busca em tempo real.
     - Introduzida seleção instantânea em 1 clique com cards interativos luminosos (`Neon Lime` com check de confirmação), preenchimento automático inteligente de subtipo, forma de pagamento, dados Pix e sincronização bidirecional com a lista suspensa `<select>`.
 
+- **Botão "Marcar como Pago" no Card & Efeito Kanban Entre Gavetas (24/10/2026):**
+  - **Botão de Pago em 1 Clique no Card (`QuickExpenseModal`):** Em cada card da página `Planejamento & Tetos` (`/budgets`), foi inserido um botão dedicado de liquidação rápida:
+    - Se a categoria ainda não teve saídas no mês (`spent === 0`), exibe o botão verde neon proeminente `[ ✓ Marcar como Pago ]`.
+    - Se já houver pagamentos parciais (`spent > 0`), exibe a badge `[ ✓ Pago: R$ ... ]` e o botão `[ + Pagar ]` para compras fracionadas.
+    - Ao clicar, abre o modal veloz com o valor do teto pré-preenchido, chave Pix cadastrada com botão de copiar em 1 clique, forma de pagamento e registro imediato de saída `completed` no Supabase via `POST /api/finance/transactions`.
+  - **Efeito Kanban Drag & Drop Nativo:**
+    - Cada card de despesa e receita possui o cursor `grab` com ícone `GripVertical` e suporte a arrasto (`draggable`).
+    - Ao arrastar um card sobre outra gaveta orçamentária, a gaveta ganha destaque em tempo real com borda tracejada neon (`border-2 border-dashed border-neon bg-neon/10`) e banner de drop `⬇ Solte o card aqui para mover para a gaveta "Nome"`.
+    - Ao soltar o card, a categoria é reclassificada imediatamente na base de dados via `PUT /api/finance/categories` (`group_name`), sem recarregar a página e com feedback instantâneo.
+    - **Acessibilidade Mobile:** Para telas de toque ou usuários que preferem não arrastar, cada card possui o botão de troca de gaveta (`ArrowRightLeft`) que abre um menu direto com todas as gavetas disponíveis.
+  - **Estabilidade do Dev Server & Tratamento de Compilação:**
+    - Corrigido erro de tipagem no SVG Lucide e sintaxe de fechamento.
+    - Rotas pré-aquecidas e build de produção (`npm run build`) validado com código de saída 0.
+
+---
+
+## 5. Aprendizados & Protocolo de Manutenção (DOE Framework)
+
+- **24/10/2026:**
+  - Em Next.js 15 (App Router) em desenvolvimento no Windows, rotas frias como `/budgets` e endpoints de API podem demorar até 30s-50s para compilar sob demanda na primeira chamada. Requisições concorrentes ou abortadas pelo navegador durante a compilação geram `Failed to fetch`. A solução é sempre pré-aquecer as rotas principais com chamadas HTTP no bootstrap e garantir builds limpos de produção.
+  - Elementos SVG do pacote `lucide-react` não aceitam o atributo nativo `title` em TypeScript; deve-se envelopá-los com `<span title="...">` para manter acessibilidade sem violar a validação de tipos.
+  - A drag and drop nativa do HTML5 (`onDragStart`, `onDragOver`, `onDrop`) é perfeitamente suficiente para fluxos Kanban simples entre containers, mantendo zero overhead de dependências externas e 100% de compatibilidade com o React 19.
+
 ---
 
 
