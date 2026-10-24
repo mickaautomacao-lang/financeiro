@@ -31,6 +31,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency, formatDateBR } from '@/lib/utils';
 import { useFinance } from '@/context/FinanceContext';
 import { ICON_MAP } from '@/components/dashboard/CategoryModal';
+import { EditGroupModal } from '@/components/dashboard/EditGroupModal';
 import type { Transaction, Category } from '@/types/database.types';
 
 const GROUP_ORDER = [
@@ -84,6 +85,33 @@ const GROUP_METADATA: Record<
   },
 };
 
+function getGroupMeta(groupName: string) {
+  if (GROUP_METADATA[groupName]) return GROUP_METADATA[groupName];
+  const lower = groupName.toLowerCase();
+  if (lower.includes('mora') || lower.includes('casa') || lower.includes('habita') || lower.includes('lar')) {
+    return { icon: '🏠', color: '#38BDF8', desc: 'Custos da moradia, aluguel, condomínio e contas do lar' };
+  }
+  if (lower.includes('alim') || lower.includes('merc') || lower.includes('feir') || lower.includes('nutri')) {
+    return { icon: '🛒', color: '#10B981', desc: 'Alimentação, feira, supermercado e mantimentos' };
+  }
+  if (lower.includes('trans') || lower.includes('auto') || lower.includes('carro') || lower.includes('moto')) {
+    return { icon: '🚗', color: '#F59E0B', desc: 'Deslocamentos, combustível, manutenção e transporte' };
+  }
+  if (lower.includes('cart') || lower.includes('parce') || lower.includes('fatur')) {
+    return { icon: '💳', color: '#A855F7', desc: 'Faturas de cartão de crédito e compras parceladas' };
+  }
+  if (lower.includes('fam') || lower.includes('saud') || lower.includes('educ') || lower.includes('esco')) {
+    return { icon: '👨‍👩‍👧', color: '#EC4899', desc: 'Saúde, educação, farmácia e bem-estar familiar' };
+  }
+  if (lower.includes('laz') || lower.includes('vid') || lower.includes('stre') || lower.includes('rest')) {
+    return { icon: '🍿', color: '#6366F1', desc: 'Lazer, assinaturas, saídas e entretenimento' };
+  }
+  if (lower.includes('rend') || lower.includes('sala') || lower.includes('entra')) {
+    return { icon: '💼', color: '#4ADE80', desc: 'Fontes de renda, salário, freelances e entradas' };
+  }
+  return { icon: '📁', color: '#38BDF8', desc: 'Gaveta orçamentária personalizada' };
+}
+
 function ExpensesContent() {
   const {
     transactions,
@@ -109,6 +137,7 @@ function ExpensesContent() {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [updatingTxId, setUpdatingTxId] = useState<string | null>(null);
   const [copiedPixId, setCopiedPixId] = useState<string | null>(null);
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
 
   // Filtrar apenas despesas (type === 'expense')
   const expenseTransactions = useMemo(() => {
@@ -422,7 +451,7 @@ function ExpensesContent() {
               Todas as Gavetas ({expenseCategories.length})
             </button>
             {groupedExpenseCategories.map(([group, cats]) => {
-              const meta = GROUP_METADATA[group] || GROUP_METADATA['Outros'];
+              const meta = getGroupMeta(group);
               const isSelected = selectedGroupFilter === group;
               return (
                 <button
@@ -447,7 +476,7 @@ function ExpensesContent() {
           {groupedExpenseCategories
             .filter(([group]) => selectedGroupFilter === 'all' || selectedGroupFilter === group)
             .map(([group, cats]) => {
-              const meta = GROUP_METADATA[group] || GROUP_METADATA['Outros'];
+              const meta = getGroupMeta(group);
               const isCollapsed = Boolean(collapsedGroups[group]);
 
               // Total do Grupo
@@ -485,6 +514,14 @@ function ExpensesContent() {
                           <h3 className="text-base font-bold text-white tracking-tight">
                             {group}
                           </h3>
+                          <button
+                            type="button"
+                            onClick={() => setEditingGroup(group)}
+                            title="Renomear título desta gaveta"
+                            className="p-1 rounded-md text-graphite-400 hover:text-white hover:bg-graphite-800 transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
                           <Badge variant="neutral" className="text-[10px] font-mono">
                             {cats.length} {cats.length === 1 ? 'subconta' : 'subcontas'}
                           </Badge>
@@ -1125,6 +1162,13 @@ function ExpensesContent() {
           )}
         </div>
       )}
+
+      {/* Modal para Renomear Gaveta Orçamentária */}
+      <EditGroupModal
+        isOpen={Boolean(editingGroup)}
+        onClose={() => setEditingGroup(null)}
+        currentGroupName={editingGroup || ''}
+      />
     </div>
   );
 }

@@ -23,6 +23,7 @@ import { useFinance } from '@/context/FinanceContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { ICON_MAP } from '@/components/dashboard/CategoryModal';
+import { EditGroupModal } from '@/components/dashboard/EditGroupModal';
 
 const GROUP_ORDER = [
   'Moradia & Habitação',
@@ -81,6 +82,33 @@ const GROUP_METADATA: Record<
   },
 };
 
+function getGroupMeta(groupName: string) {
+  if (GROUP_METADATA[groupName]) return GROUP_METADATA[groupName];
+  const lower = groupName.toLowerCase();
+  if (lower.includes('mora') || lower.includes('casa') || lower.includes('habita') || lower.includes('lar')) {
+    return { icon: '🏠', color: '#38BDF8', desc: 'Custos da moradia, aluguel, condomínio e contas do lar' };
+  }
+  if (lower.includes('alim') || lower.includes('merc') || lower.includes('feir') || lower.includes('nutri')) {
+    return { icon: '🛒', color: '#10B981', desc: 'Alimentação, feira, supermercado e mantimentos' };
+  }
+  if (lower.includes('trans') || lower.includes('auto') || lower.includes('carro') || lower.includes('moto')) {
+    return { icon: '🚗', color: '#F59E0B', desc: 'Deslocamentos, combustível, manutenção e transporte' };
+  }
+  if (lower.includes('cart') || lower.includes('parce') || lower.includes('fatur')) {
+    return { icon: '💳', color: '#A855F7', desc: 'Faturas de cartão de crédito e compras parceladas' };
+  }
+  if (lower.includes('fam') || lower.includes('saud') || lower.includes('educ') || lower.includes('esco')) {
+    return { icon: '👨‍👩‍👧', color: '#EC4899', desc: 'Saúde, educação, farmácia e bem-estar familiar' };
+  }
+  if (lower.includes('laz') || lower.includes('vid') || lower.includes('stre') || lower.includes('rest')) {
+    return { icon: '🍿', color: '#6366F1', desc: 'Lazer, assinaturas, saídas e entretenimento' };
+  }
+  if (lower.includes('rend') || lower.includes('sala') || lower.includes('entra')) {
+    return { icon: '💼', color: '#4ADE80', desc: 'Fontes de renda, salário, freelances e entradas' };
+  }
+  return { icon: '📁', color: '#38BDF8', desc: 'Gaveta orçamentária personalizada' };
+}
+
 function BudgetsContent() {
   const {
     categories,
@@ -94,6 +122,7 @@ function BudgetsContent() {
   } = useFinance();
   const [natureTab, setNatureTab] = useState<'expense' | 'income'>('expense');
   const [filterType, setFilterType] = useState<string>('all');
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
 
   // Separar categorias por natureza
   const expenseCategories = categories.filter((c) => c.category_nature !== 'income');
@@ -131,10 +160,10 @@ function BudgetsContent() {
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <PieChart className="h-5 w-5 text-neon" />
-            Orçamentos & Gestão de Categorias
+            Planejamento & Tetos Orçamentários
           </h2>
           <p className="text-xs text-graphite-400 mt-0.5">
-            Cadastre novas categorias, ajuste tetos de despesas, metas de receita e regras do Telegram
+            Calibre os tetos mensais por gaveta patrimonial, monitore a regra de 80% e controle suas previsões de renda e parcelamentos
           </p>
         </div>
 
@@ -449,7 +478,7 @@ function BudgetsContent() {
           return (
             <div className="space-y-8">
               {activeGroups.map(([group, cats]) => {
-                const meta = GROUP_METADATA[group] || GROUP_METADATA['Outros'];
+                const meta = getGroupMeta(group);
                 const groupLimit = cats.reduce(
                   (sum, c) => sum + (parseFloat(String(c.budget_limit)) || 0),
                   0
@@ -470,6 +499,14 @@ function BudgetsContent() {
                             <h3 className="text-sm font-bold text-white tracking-tight">
                               {group}
                             </h3>
+                            <button
+                              type="button"
+                              onClick={() => setEditingGroup(group)}
+                              title="Renomear título desta gaveta"
+                              className="p-1 rounded-md text-graphite-400 hover:text-white hover:bg-graphite-800 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
                             <span className="text-[10px] text-graphite-400 font-mono">
                               ({cats.length} {cats.length === 1 ? 'conta' : 'contas'})
                             </span>
@@ -554,13 +591,13 @@ function BudgetsContent() {
                           <h4 className="text-sm font-semibold text-white truncate" title={cat.name}>
                             {cat.name}
                           </h4>
-                          <div className="flex items-center justify-between text-xs text-graphite-400 font-mono mt-0.5">
-                            <span>
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs text-graphite-400 font-mono mt-1 pt-0.5">
+                            <span className="text-graphite-300">
                               {cat.category_type === 'fixed' ? 'Salário Líquido: ' : 'Meta: '}
-                              {formatCurrency(limit)}
+                              <strong className="text-white font-mono">{formatCurrency(limit)}</strong>
                             </span>
                             {cat.due_day && (
-                              <span className="text-[11px] text-emerald-400">
+                              <span className="text-[10px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-sans font-medium shrink-0">
                                 Cai dia {cat.due_day}
                               </span>
                             )}
@@ -716,15 +753,17 @@ function BudgetsContent() {
                         <h4 className="text-sm font-semibold text-white truncate" title={cat.name}>
                           {cat.name}
                         </h4>
-                        <div className="flex items-center justify-between text-xs text-graphite-400 font-mono mt-0.5">
-                          <span>Teto: {formatCurrency(limit)}</span>
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs text-graphite-400 font-mono mt-1 pt-0.5">
+                          <span className="text-graphite-300">
+                            Teto: <strong className="text-white font-mono">{formatCurrency(limit)}</strong>
+                          </span>
                           {cat.category_type === 'fixed' && (
-                            <span className="text-[11px] text-blue-300">
+                            <span className="text-[10px] text-blue-300 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded font-sans font-medium shrink-0">
                               Vence dia {cat.due_day || 10}
                             </span>
                           )}
                           {cat.category_type === 'credit_card' && (
-                            <span className="text-[10px] text-purple-300">
+                            <span className="text-[10px] text-purple-300 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded font-sans font-medium shrink-0">
                               Fecha dia {cat.closing_day || 5} • Vence dia {cat.due_day || 15}
                             </span>
                           )}
@@ -824,6 +863,13 @@ function BudgetsContent() {
       {natureTab === 'expense' && (
         <BudgetProgress limit={0} showAddButton={false} />
       )}
+
+      {/* Modal de Renomear Gaveta Orçamentária */}
+      <EditGroupModal
+        isOpen={Boolean(editingGroup)}
+        onClose={() => setEditingGroup(null)}
+        currentGroupName={editingGroup || ''}
+      />
     </div>
   );
 }

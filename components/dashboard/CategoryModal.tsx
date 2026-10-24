@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Loader2,
@@ -24,6 +24,7 @@ import {
   QrCode,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useFinance } from '@/context/FinanceContext';
 import type { Category } from '@/types/database.types';
 
 export const ICON_MAP: Record<string, React.ElementType> = {
@@ -86,8 +87,11 @@ export function CategoryModal({
   categoryToEdit,
   onSuccess,
 }: CategoryModalProps) {
+  const { categories } = useFinance();
   const [categoryNature, setCategoryNature] = useState<'expense' | 'income'>('expense');
   const [groupName, setGroupName] = useState('Moradia & Habitação');
+  const [isCustomGroup, setIsCustomGroup] = useState(false);
+  const [customGroupName, setCustomGroupName] = useState('');
   const [name, setName] = useState('');
   const [budgetLimit, setBudgetLimit] = useState('');
   const [color, setColor] = useState('#A3E635');
@@ -104,7 +108,18 @@ export function CategoryModal({
 
   const isEditing = Boolean(categoryToEdit && categoryToEdit.id);
 
+  const availableGroups = useMemo(() => {
+    const baseGroups = categoryNature === 'income' ? INCOME_GROUPS : EXPENSE_GROUPS;
+    const existingCustom = (categories || [])
+      .filter((c) => c.category_nature === categoryNature && c.group_name)
+      .map((c) => c.group_name as string);
+
+    return Array.from(new Set([...baseGroups, ...existingCustom]));
+  }, [categoryNature, categories]);
+
   useEffect(() => {
+    setIsCustomGroup(false);
+    setCustomGroupName('');
     if (categoryToEdit) {
       setCategoryNature(categoryToEdit.category_nature === 'income' ? 'income' : 'expense');
       setGroupName(
@@ -158,6 +173,10 @@ export function CategoryModal({
     const numericDueDay = dueDay ? parseInt(dueDay) : null;
     const numericClosingDay = closingDay ? parseInt(closingDay) : null;
 
+    const finalGroupName = isCustomGroup
+      ? (customGroupName.trim() || (categoryNature === 'income' ? 'Fontes de Renda' : 'Outros'))
+      : groupName;
+
     setIsLoading(true);
 
     try {
@@ -172,7 +191,7 @@ export function CategoryModal({
             icon,
             category_type: categoryType,
             category_nature: categoryNature,
-            group_name: groupName,
+            group_name: finalGroupName,
             due_day: numericDueDay,
             closing_day: categoryNature === 'income' ? null : numericClosingDay,
             pix_key: pixKey ? pixKey.trim() : null,
@@ -185,7 +204,7 @@ export function CategoryModal({
             icon,
             category_type: categoryType,
             category_nature: categoryNature,
-            group_name: groupName,
+            group_name: finalGroupName,
             due_day: numericDueDay,
             closing_day: categoryNature === 'income' ? null : numericClosingDay,
             pix_key: pixKey ? pixKey.trim() : null,
@@ -547,22 +566,66 @@ export function CategoryModal({
 
           {/* Gaveta / Macro-Grupo Orçamentário */}
           <div>
-            <label className="block text-xs font-medium text-graphite-300 mb-1.5">
-              Gaveta / Grupo Orçamentário <span className="text-expense">*</span>
-            </label>
-            <select
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-colors"
-            >
-              {(categoryNature === 'income' ? INCOME_GROUPS : EXPENSE_GROUPS).map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-graphite-300">
+                Gaveta / Centro de Custos <span className="text-expense">*</span>
+              </label>
+              {isCustomGroup && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomGroup(false);
+                    setGroupName(categoryNature === 'income' ? 'Fontes de Renda' : 'Moradia & Habitação');
+                  }}
+                  className="text-[11px] text-neon hover:underline"
+                >
+                  ← Escolher gaveta existente
+                </button>
+              )}
+            </div>
+
+            {!isCustomGroup ? (
+              <select
+                value={groupName}
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    setIsCustomGroup(true);
+                    setCustomGroupName('');
+                  } else {
+                    setGroupName(e.target.value);
+                  }
+                }}
+                className="w-full px-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-colors"
+              >
+                <optgroup label="Gavetas Disponíveis">
+                  {availableGroups.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Nova Gaveta">
+                  <option value="__custom__">➕ Criar nova gaveta personalizada...</option>
+                </optgroup>
+              </select>
+            ) : (
+              <div className="space-y-1.5">
+                <input
+                  type="text"
+                  required
+                  value={customGroupName}
+                  onChange={(e) => setCustomGroupName(e.target.value)}
+                  placeholder="Digite o nome da nova gaveta (ex: Pets, Obras, Empresa...)"
+                  className="w-full px-3.5 py-2.5 bg-graphite-900 border border-neon/50 rounded-lg text-sm text-white placeholder-graphite-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-colors"
+                  autoFocus
+                />
+                <p className="text-[11px] text-neon">
+                  Uma nova gaveta será criada com este título ao salvar.
+                </p>
+              </div>
+            )}
             <p className="text-[10px] text-graphite-400 mt-1">
-              Classifica esta conta dentro de uma das grandes gavetas patrimoniais.
+              Classifica esta conta dentro das macro-gavetas patrimoniais da sua vida financeira.
             </p>
           </div>
 

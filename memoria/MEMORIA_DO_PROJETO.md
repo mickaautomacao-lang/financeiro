@@ -193,6 +193,11 @@ c:\Finanças\
     - **Interface em Acordeão / Gavetas:** Em `/expenses` e `/budgets`, cada Macro-Gaveta possui barra de consumo global, teto consolidado, valor gasto e lista expansível das subcontas com seus respectivos vencimentos, situação de pagamento e chave Pix.
     - **Seleção Agrupada:** No formulário de lançamentos (`NewTransactionModal`), as opções de categoria agora aparecem agrupadas por `<optgroup>` para seleção rápida e intuitiva.
 
+- **Personalização de Títulos de Gavetas & Refinamento de Nomenclatura UX (24/10/2026):**
+  - **Renomeação Dinâmica de Gavetas (`EditGroupModal`):** Adicionado botão de edição (`Pencil`) diretamente nos cabeçalhos das gavetas em `/expenses` e `/budgets`. Ao renomear (ex: "Moradia & Habitação" para "Casa"), a rota `POST /api/finance/categories/group` atualiza atomicamente todas as categorias e transações vinculadas.
+  - **Criação de Gavetas Personalizadas:** No `CategoryModal`, o seletor agora inclui `➕ Criar nova gaveta personalizada...`, permitindo ao usuário criar livremente qualquer centro de custos que desejar.
+  - **Arquitetura Cognitiva de Nomenclatura:** Atualizado o menu lateral de **"Orçamentos"** para **"Planejamento & Tetos"**. Sob a ótica de educação financeira, elimina a confusão com "Despesas do Mês": uma página é para a execução e liquidação de contas diárias, enquanto a outra é para parametrização estratégica de limites, tetos e previsões.
+  - **Correção Visual de Espaçamento:** Ajustado layout dos cards de orçamento em `/budgets`, separando Teto e Vencimento com badges e espaçamentos fluidos (`gap-1.5`), eliminando textos colados.
 
 ---
 

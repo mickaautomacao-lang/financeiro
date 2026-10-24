@@ -40,7 +40,7 @@ export function Sidebar() {
     { label: 'Dashboard', href: '/', icon: LayoutDashboard },
     { label: 'Despesas do Mês', href: '/expenses', icon: Receipt },
     { label: 'Transações', href: '/transactions', icon: ArrowLeftRight, badge: 'Auto' },
-    { label: 'Orçamentos', href: '/budgets', icon: PieChart },
+    { label: 'Planejamento & Tetos', href: '/budgets', icon: PieChart },
     { label: 'Analytics', href: '/analytics', icon: LineChart },
     { label: 'Metas & Reserva', href: '/goals', icon: Target },
     {
