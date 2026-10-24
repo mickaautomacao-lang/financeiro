@@ -620,15 +620,27 @@ export function NewTransactionModal({
                 className="w-full h-10 rounded-lg border border-border bg-graphite-900 px-3 text-xs text-graphite-100 focus:border-neon focus:outline-none"
               >
                 <option value="">Selecione uma categoria...</option>
-                {filteredCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                    {cat.category_nature === 'income'
-                      ? ` [${cat.category_type === 'fixed' ? 'Entrada Fixa' : 'Freelance / Variável'}]`
-                      : cat.budget_limit > 0
-                      ? ` (Teto: R$ ${cat.budget_limit})`
-                      : ''}
-                  </option>
+                {Object.entries(
+                  filteredCategories.reduce((acc, cat) => {
+                    const group =
+                      cat.group_name || (type === 'income' ? 'Fontes de Renda' : 'Outros');
+                    if (!acc[group]) acc[group] = [];
+                    acc[group].push(cat);
+                    return acc;
+                  }, {} as Record<string, Category[]>)
+                ).map(([group, cats]) => (
+                  <optgroup key={group} label={group}>
+                    {cats.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                        {cat.category_nature === 'income'
+                          ? ` [${cat.category_type === 'fixed' ? 'Entrada Fixa' : 'Freelance / Variável'}]`
+                          : cat.budget_limit > 0
+                          ? ` (Teto: R$ ${cat.budget_limit})`
+                          : ''}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
 

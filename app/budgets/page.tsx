@@ -24,6 +24,63 @@ import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { ICON_MAP } from '@/components/dashboard/CategoryModal';
 
+const GROUP_ORDER = [
+  'Moradia & Habitação',
+  'Alimentação & Abastecimento',
+  'Transporte & Mobilidade',
+  'Cartões & Parcelamentos',
+  'Família, Saúde & Educação',
+  'Estilo de Vida & Lazer',
+  'Fontes de Renda',
+  'Outros',
+];
+
+const GROUP_METADATA: Record<
+  string,
+  { icon: string; color: string; desc: string }
+> = {
+  'Moradia & Habitação': {
+    icon: '🏠',
+    color: '#38BDF8',
+    desc: 'Custos da base: prestação/aluguel, condomínio, luz, água e internet',
+  },
+  'Alimentação & Abastecimento': {
+    icon: '🛒',
+    color: '#10B981',
+    desc: 'Nutrição essencial: feira livre, supermercado e padaria',
+  },
+  'Transporte & Mobilidade': {
+    icon: '🚗',
+    color: '#F59E0B',
+    desc: 'Deslocamentos: combustível, seguro, IPVA, manutenção e apps',
+  },
+  'Cartões & Parcelamentos': {
+    icon: '💳',
+    color: '#A855F7',
+    desc: 'Faturas e compras em 3x, 6x, 12x com projeção de término',
+  },
+  'Família, Saúde & Educação': {
+    icon: '👨‍👩‍👧',
+    color: '#EC4899',
+    desc: 'Desenvolvimento e bem-estar: escola, farmácia e consultas',
+  },
+  'Estilo de Vida & Lazer': {
+    icon: '🍿',
+    color: '#6366F1',
+    desc: 'Qualidade de vida consciente: streaming, restaurantes e lazer',
+  },
+  'Fontes de Renda': {
+    icon: '💼',
+    color: '#4ADE80',
+    desc: 'Salário CLT, Pró-Labore, freelances e rendimentos',
+  },
+  Outros: {
+    icon: '📦',
+    color: '#94A3B8',
+    desc: 'Despesas diversas e avulsas',
+  },
+};
+
 function BudgetsContent() {
   const {
     categories,
@@ -376,10 +433,67 @@ function BudgetsContent() {
             );
           }
 
+          // Agrupamento por Macro-Gavetas
+          const groupsMap: Record<string, typeof filteredCategories> = {};
+          GROUP_ORDER.forEach((g) => {
+            groupsMap[g] = [];
+          });
+          filteredCategories.forEach((cat) => {
+            const g = cat.group_name || (natureTab === 'income' ? 'Fontes de Renda' : 'Outros');
+            if (!groupsMap[g]) groupsMap[g] = [];
+            groupsMap[g].push(cat);
+          });
+
+          const activeGroups = Object.entries(groupsMap).filter(([_, cats]) => cats.length > 0);
+
           return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredCategories.map((cat) => {
-                const isIncome = natureTab === 'income';
+            <div className="space-y-8">
+              {activeGroups.map(([group, cats]) => {
+                const meta = GROUP_METADATA[group] || GROUP_METADATA['Outros'];
+                const groupLimit = cats.reduce(
+                  (sum, c) => sum + (parseFloat(String(c.budget_limit)) || 0),
+                  0
+                );
+                const groupSpent = cats.reduce((sum, c) => {
+                  const b = budgets.find((item) => item.category_name === c.name);
+                  return sum + (b ? parseFloat(String(b.actual_spent)) || 0 : 0);
+                }, 0);
+                const groupPct = groupLimit > 0 ? (groupSpent / groupLimit) * 100 : 0;
+
+                return (
+                  <div key={group} className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/70 pb-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-lg">{meta.icon}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-white tracking-tight">
+                              {group}
+                            </h3>
+                            <span className="text-[10px] text-graphite-400 font-mono">
+                              ({cats.length} {cats.length === 1 ? 'conta' : 'contas'})
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-graphite-400">{meta.desc}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs font-mono text-graphite-400 shrink-0">
+                        <span>
+                          Teto da Gaveta:{' '}
+                          <strong className="text-white">{formatCurrency(groupLimit)}</strong>
+                        </span>
+                        <span>
+                          Gasto:{' '}
+                          <strong className={groupPct >= 100 ? 'text-expense' : 'text-neon'}>
+                            {formatCurrency(groupSpent)}
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {cats.map((cat) => {
+                        const isIncome = natureTab === 'income';
                 const limit = parseFloat(String(cat.budget_limit)) || 0;
                 const IconComponent = ICON_MAP[cat.icon] || Layers;
 
@@ -693,6 +807,10 @@ function BudgetsContent() {
                         <Receipt className="w-3.5 h-3.5 text-neon" />
                         <span>Extrato de Compras & Pagamentos</span>
                       </button>
+                    </div>
+                  </div>
+                );
+              })}
                     </div>
                   </div>
                 );

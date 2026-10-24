@@ -180,12 +180,18 @@ c:\Finanças\
     - `NewTransactionModal` agora suporta modo de edição (`transactionToEdit`), preenchendo todos os campos e enviando atualizações via `PATCH /api/finance/transactions`.
     - No rodapé do modal de edição, adicionado o botão `[ Excluir ]` com confirmação de segurança.
     - O menu lateral direito (`RightSidebar` - Atividades Recentes), a tabela geral (`TransactionTable`) e o extrato de categoria (`CategoryTransactionsModal`) receberam botões diretos de **Editar** (`Pencil`) e **Excluir** (`Trash2`).
-  - **Nova Página "Despesas do Mês" (`/expenses`):**
-    - Criada a rota dedicada `/expenses` e integrada ao menu lateral esquerdo (`Sidebar.tsx`) com ícone `Receipt`.
-    - Visão consolidada em 3 abas:
-      1. `Todas as Saídas & Avulsas`: extrato detalhado com busca em tempo real, filtros por Categoria, Status (Pago/Pendente) e Método (Pix, Cartão, Boleto), botão instantâneo `Confirmar Saída` e cópia de Pix.
-      2. `Por Categoria & Tetos`: cartões com progresso orçamentário, saldo restante e lista expansível das compras daquela categoria.
-      3. `Pendentes a Pagar`: visão focada nas despesas a vencer/liquidar no mês corrente.
+  - **Reestruturação Patrimonial em Macro-Gavetas (Centros de Custo):**
+    - **Fim da Bagunça Visual:** Transição do modelo "plano" de categorias soltas para a arquitetura de **6 Macro-Gavetas Patrimoniais**:
+      1. `🏠 Moradia & Habitação`: Pagamento fixo de casa, Energia Elétrica, Água & Saneamento, Internet Fibra.
+      2. `🛒 Alimentação & Abastecimento`: Alimentação & Mercado, Feira Livre & Hortifruti.
+      3. `🚗 Transporte & Mobilidade`: Combustível & Posto, Moto, Transporte & Carro.
+      4. `💳 Cartões & Parcelamentos`: Jarbas, faturas e controle de compras parceladas.
+      5. `👨‍👩‍👧 Família, Saúde & Educação`: Escola, Saúde & Farmácia.
+      6. `🍿 Estilo de Vida & Lazer`: Streaming & Assinaturas, Lazer e Restaurantes.
+      7. `💼 Fontes de Renda`: Salário AeC, Enfermagem, Massaranduba, Freelances e Dividendos.
+    - **Remoção de Duplicidades:** Exclusão da categoria duplicada vazia `Salario`, consolidando em `Salario AeC` com salário líquido de R$ 3.500,00.
+    - **Interface em Acordeão / Gavetas:** Em `/expenses` e `/budgets`, cada Macro-Gaveta possui barra de consumo global, teto consolidado, valor gasto e lista expansível das subcontas com seus respectivos vencimentos, situação de pagamento e chave Pix.
+    - **Seleção Agrupada:** No formulário de lançamentos (`NewTransactionModal`), as opções de categoria agora aparecem agrupadas por `<optgroup>` para seleção rápida e intuitiva.
 
 
 ---

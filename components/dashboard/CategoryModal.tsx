@@ -57,6 +57,22 @@ export const COLOR_PALETTE = [
   { name: 'Grafite Metálico', hex: '#94A3B8' },
 ];
 
+export const EXPENSE_GROUPS = [
+  'Moradia & Habitação',
+  'Alimentação & Abastecimento',
+  'Transporte & Mobilidade',
+  'Cartões & Parcelamentos',
+  'Família, Saúde & Educação',
+  'Estilo de Vida & Lazer',
+  'Outros',
+];
+
+export const INCOME_GROUPS = [
+  'Fontes de Renda',
+  'Investimentos & Patrimônio',
+  'Outras Entradas',
+];
+
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -71,6 +87,7 @@ export function CategoryModal({
   onSuccess,
 }: CategoryModalProps) {
   const [categoryNature, setCategoryNature] = useState<'expense' | 'income'>('expense');
+  const [groupName, setGroupName] = useState('Moradia & Habitação');
   const [name, setName] = useState('');
   const [budgetLimit, setBudgetLimit] = useState('');
   const [color, setColor] = useState('#A3E635');
@@ -90,6 +107,10 @@ export function CategoryModal({
   useEffect(() => {
     if (categoryToEdit) {
       setCategoryNature(categoryToEdit.category_nature === 'income' ? 'income' : 'expense');
+      setGroupName(
+        categoryToEdit.group_name ||
+          (categoryToEdit.category_nature === 'income' ? 'Fontes de Renda' : 'Moradia & Habitação')
+      );
       setName(categoryToEdit.name || '');
       setBudgetLimit(categoryToEdit.budget_limit ? String(categoryToEdit.budget_limit) : '');
       setColor(categoryToEdit.color || (categoryToEdit.category_nature === 'income' ? '#10B981' : '#A3E635'));
@@ -102,6 +123,7 @@ export function CategoryModal({
       setAutoLaunchMonth(false);
     } else {
       setCategoryNature('expense');
+      setGroupName('Moradia & Habitação');
       setName('');
       setBudgetLimit('');
       setColor('#A3E635');
@@ -150,6 +172,7 @@ export function CategoryModal({
             icon,
             category_type: categoryType,
             category_nature: categoryNature,
+            group_name: groupName,
             due_day: numericDueDay,
             closing_day: categoryNature === 'income' ? null : numericClosingDay,
             pix_key: pixKey ? pixKey.trim() : null,
@@ -162,6 +185,7 @@ export function CategoryModal({
             icon,
             category_type: categoryType,
             category_nature: categoryNature,
+            group_name: groupName,
             due_day: numericDueDay,
             closing_day: categoryNature === 'income' ? null : numericClosingDay,
             pix_key: pixKey ? pixKey.trim() : null,
@@ -521,10 +545,31 @@ export function CategoryModal({
             )}
           </div>
 
+          {/* Gaveta / Macro-Grupo Orçamentário */}
+          <div>
+            <label className="block text-xs font-medium text-graphite-300 mb-1.5">
+              Gaveta / Grupo Orçamentário <span className="text-expense">*</span>
+            </label>
+            <select
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-graphite-900 border border-border rounded-lg text-sm text-white focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon transition-colors"
+            >
+              {(categoryNature === 'income' ? INCOME_GROUPS : EXPENSE_GROUPS).map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-graphite-400 mt-1">
+              Classifica esta conta dentro de uma das grandes gavetas patrimoniais.
+            </p>
+          </div>
+
           {/* Nome */}
           <div>
             <label className="block text-xs font-medium text-graphite-300 mb-1.5">
-              Nome da Categoria <span className="text-expense">*</span>
+              Nome da Subconta / Categoria <span className="text-expense">*</span>
             </label>
             <input
               type="text"

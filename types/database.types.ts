@@ -27,6 +27,7 @@ export interface Database {
           color: string;
           icon: string;
           budget_limit: number;
+          group_name?: string | null;
           category_type?: 'fixed' | 'credit_card' | 'variable';
           category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
@@ -43,6 +44,7 @@ export interface Database {
           color?: string;
           icon?: string;
           budget_limit?: number;
+          group_name?: string | null;
           category_type?: 'fixed' | 'credit_card' | 'variable';
           category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
@@ -59,6 +61,7 @@ export interface Database {
           color?: string;
           icon?: string;
           budget_limit?: number;
+          group_name?: string | null;
           category_type?: 'fixed' | 'credit_card' | 'variable';
           category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
