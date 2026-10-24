@@ -176,6 +176,16 @@ c:\Finanças\
   - **Botão de Confirmação de Saída / Pagamento Instantâneo:** Despesas registradas com status `pending` (a pagar) exibem o botão direto `[ Confirmar Saída ]` tanto na tabela principal de lançamentos quanto no extrato da categoria. Ao clicar, o status alterna para `completed` em tempo real sem exigir abertura de modais ou edição manual.
   - **Integração de Chave Pix & Dados Bancários:** Adicionadas colunas `pix_key` e `payment_info` nas tabelas `categories` e `transactions` do Supabase. Categorias como Escola, Luz ou Feira podem armazenar uma Chave Pix padrão, com botão `Copiar Pix` e auto-preenchimento nos novos lançamentos.
   - **Extrato Detalhado de Compras por Categoria (Ex: Feira R$ 2.000):** O novo componente `CategoryTransactionsModal` permite rastrear compras parciais dentro do teto mensal estabelecido (ex: compras de R$ 150, R$ 200, R$ 350). Apresenta a lista discriminada com datas, forma de pagamento, valor, saldo restante do teto e botões de confirmação rápida de saída.
+  - **Edição & Exclusão Completa de Lançamentos:**
+    - `NewTransactionModal` agora suporta modo de edição (`transactionToEdit`), preenchendo todos os campos e enviando atualizações via `PATCH /api/finance/transactions`.
+    - No rodapé do modal de edição, adicionado o botão `[ Excluir ]` com confirmação de segurança.
+    - O menu lateral direito (`RightSidebar` - Atividades Recentes), a tabela geral (`TransactionTable`) e o extrato de categoria (`CategoryTransactionsModal`) receberam botões diretos de **Editar** (`Pencil`) e **Excluir** (`Trash2`).
+  - **Nova Página "Despesas do Mês" (`/expenses`):**
+    - Criada a rota dedicada `/expenses` e integrada ao menu lateral esquerdo (`Sidebar.tsx`) com ícone `Receipt`.
+    - Visão consolidada em 3 abas:
+      1. `Todas as Saídas & Avulsas`: extrato detalhado com busca em tempo real, filtros por Categoria, Status (Pago/Pendente) e Método (Pix, Cartão, Boleto), botão instantâneo `Confirmar Saída` e cópia de Pix.
+      2. `Por Categoria & Tetos`: cartões com progresso orçamentário, saldo restante e lista expansível das compras daquela categoria.
+      3. `Pendentes a Pagar`: visão focada nas despesas a vencer/liquidar no mês corrente.
 
 
 ---

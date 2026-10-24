@@ -11,6 +11,8 @@ import {
   Wallet,
   Sparkles,
   ExternalLink,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +20,7 @@ import { formatCurrency, formatDateBR } from '@/lib/utils';
 import { useFinance } from '@/context/FinanceContext';
 
 export function RightSidebar() {
-  const { kpi, alerts, transactions, goals } = useFinance();
+  const { kpi, alerts, transactions, goals, openEditTransactionModal, deleteTransaction } = useFinance();
 
   const emergencyGoal = goals.find((g) =>
     g.name.toLowerCase().includes('reserva')
@@ -152,13 +154,17 @@ export function RightSidebar() {
             Nenhuma atividade recente registrada.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {recentTransactions.map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between text-xs"
+                className="group p-2 -mx-2 rounded-xl hover:bg-graphite-900/80 border border-transparent hover:border-border/60 transition-all flex items-center justify-between text-xs"
               >
-                <div className="flex items-center gap-2.5 truncate pr-2">
+                <div
+                  className="flex items-center gap-2.5 truncate pr-2 cursor-pointer flex-1"
+                  onClick={() => openEditTransactionModal(tx)}
+                  title="Clique para editar este lançamento"
+                >
                   <div
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
                       tx.type === 'income'
@@ -173,19 +179,50 @@ export function RightSidebar() {
                     )}
                   </div>
                   <div className="truncate">
-                    <p className="font-medium text-white truncate">{tx.description}</p>
+                    <p className="font-medium text-white truncate group-hover:text-neon transition-colors">
+                      {tx.description}
+                    </p>
                     <p className="text-[10px] text-graphite-400">
                       {formatDateBR(tx.date)} • {tx.source || 'Web'}
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`font-semibold font-mono shrink-0 ${
-                    tx.type === 'income' ? 'text-income' : 'text-expense'
-                  }`}
-                >
-                  {tx.type === 'income' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
-                </span>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`font-semibold font-mono ${
+                      tx.type === 'income' ? 'text-income' : 'text-expense'
+                    }`}
+                  >
+                    {tx.type === 'income' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
+                  </span>
+
+                  <div className="flex items-center gap-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditTransactionModal(tx);
+                      }}
+                      title="Editar lançamento"
+                      className="p-1 rounded text-graphite-400 hover:text-white hover:bg-graphite-800 transition-colors"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const ok = window.confirm(`Excluir a transação "${tx.description}"?`);
+                        if (ok) await deleteTransaction(tx.id);
+                      }}
+                      title="Excluir lançamento"
+                      className="p-1 rounded text-graphite-400 hover:text-expense hover:bg-expense/10 transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

@@ -19,16 +19,19 @@ import {
   Layers,
   QrCode,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import type { Category, TransactionType, TransactionStatus } from '@/types/database.types';
+import type { Category, Transaction, TransactionType, TransactionStatus } from '@/types/database.types';
+import { useFinance } from '@/context/FinanceContext';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   categories: Category[];
+  transactionToEdit?: Transaction | null;
   onSuccess: () => void;
 }
 
@@ -36,8 +39,11 @@ export function NewTransactionModal({
   isOpen,
   onClose,
   categories,
+  transactionToEdit,
   onSuccess,
 }: NewTransactionModalProps) {
+  const { deleteTransaction } = useFinance();
+  const isEditing = Boolean(transactionToEdit && transactionToEdit.id);
   const [type, setType] = useState<TransactionType>('expense');
   // Subtipo para Receita: 'fixed' (Salário/Renda Fixa), 'freelance' (Freelances/Projetos), 'investments' (Investimentos/Outros)
   // Subtipo para Despesa: 'fixed' (Fixo Mensal), 'credit_card' (Cartão/Parcelado), 'variable' (Variável)
@@ -58,8 +64,51 @@ export function NewTransactionModal({
   const [currentInstallment, setCurrentInstallment] = useState('1');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (transactionToEdit) {
+      setType(transactionToEdit.type || 'expense');
+      setEntrySubtype(transactionToEdit.entry_subtype || 'variable');
+      setAmount(transactionToEdit.amount ? String(transactionToEdit.amount) : '');
+      setDescription(transactionToEdit.description || '');
+      setCategoryId(transactionToEdit.category_id || '');
+      setCustomCategory('');
+      setDate(
+        transactionToEdit.date
+          ? transactionToEdit.date.split('T')[0]
+          : new Date().toISOString().split('T')[0]
+      );
+      setPaymentMethod(transactionToEdit.payment_method || 'Pix');
+      setPixKey(transactionToEdit.pix_key || '');
+      setPaymentInfo(transactionToEdit.payment_info || '');
+      setStatus(transactionToEdit.status || 'completed');
+      setIsInstallment(
+        Boolean(transactionToEdit.installments_count && transactionToEdit.installments_count > 1)
+      );
+      setTotalInstallments(String(transactionToEdit.installments_count || 1));
+      setCurrentInstallment(String(transactionToEdit.installment_number || 1));
+    } else {
+      setType('expense');
+      setEntrySubtype('variable');
+      setAmount('');
+      setDescription('');
+      setCategoryId('');
+      setCustomCategory('');
+      setDate(new Date().toISOString().split('T')[0]);
+      setPaymentMethod('Pix');
+      setPixKey('');
+      setPaymentInfo('');
+      setStatus('completed');
+      setIsInstallment(false);
+      setTotalInstallments('6');
+      setCurrentInstallment('1');
+    }
+    setErrorMsg('');
+    setIsSuccess(false);
+  }, [transactionToEdit, isOpen]);
 
   // Filtrar categorias conforme o Tipo selecionado (Receita vs Despesa)
   const filteredCategories = categories.filter((cat) => {
@@ -137,8 +186,12 @@ export function NewTransactionModal({
         installment_number: isInstallment ? parseInt(currentInstallment) || 1 : 1,
       };
 
+      if (isEditing) {
+        payload.id = transactionToEdit!.id;
+      }
+
       const res = await fetch('/api/finance/transactions', {
-        method: 'POST',
+        method: isEditing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -148,8 +201,8 @@ export function NewTransactionModal({
         throw new Error(data.error || 'Erro ao registrar transação');
       }
 
-      // Se for uma compra parcelada de cartão, criar também na tabela category_installments se houver categoryId
-      if (type === 'expense' && isInstallment && categoryId && parseInt(totalInstallments) > 1) {
+      // Se for uma compra parcelada de cartão nova, criar também na tabela category_installments se houver categoryId
+      if (!isEditing && type === 'expense' && isInstallment && categoryId && parseInt(totalInstallments) > 1) {
         try {
           await fetch('/api/finance/installments', {
             method: 'POST',
@@ -189,6 +242,29 @@ export function NewTransactionModal({
     }
   };
 
+  const handleDelete = async () => {
+    if (!transactionToEdit?.id) return;
+    const ok = window.confirm(
+      `Deseja realmente excluir a transação "${transactionToEdit.description}" no valor de R$ ${transactionToEdit.amount}?`
+    );
+    if (!ok) return;
+
+    setIsDeleting(true);
+    try {
+      const success = await deleteTransaction(transactionToEdit.id);
+      if (success) {
+        onSuccess();
+        onClose();
+      } else {
+        setErrorMsg('Erro ao excluir transação. Tente novamente.');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Erro ao excluir transação.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getPlaceholder = () => {
     if (type === 'income') {
       if (entrySubtype === 'fixed') return 'Ex: Salário mensal CLT, Pró-labore mensal...';
@@ -225,10 +301,16 @@ export function NewTransactionModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                {type === 'income' ? 'Lançar Receita (Entrada)' : 'Lançar Despesa (Saída)'}
+                {isEditing
+                  ? `Editar Transação (${type === 'income' ? 'Receita' : 'Despesa'})`
+                  : type === 'income'
+                  ? 'Lançar Receita (Entrada)'
+                  : 'Lançar Despesa (Saída)'}
               </h3>
               <p className="text-xs text-graphite-400">
-                {type === 'income'
+                {isEditing
+                  ? 'Modifique os dados, altere categoria, valor, data ou exclua o lançamento'
+                  : type === 'income'
                   ? 'Registro de entradas fixas, freelances e rendimentos'
                   : 'Controle de custos fixos, cartões e despesas variáveis'}
               </p>
@@ -738,38 +820,68 @@ export function NewTransactionModal({
             </div>
 
             {/* Botões de Ação */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="text-xs"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                variant={type === 'income' ? 'secondary' : 'neon'}
-                size="sm"
-                disabled={isSubmitting}
-                className={`text-xs min-w-[150px] font-semibold ${
-                  type === 'income' ? 'bg-emerald-400 hover:bg-emerald-500 text-black border-transparent shadow-sm' : ''
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Gravando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-3.5 w-3.5 stroke-[3]" />
-                    <span>{type === 'income' ? 'Salvar Receita' : 'Salvar Despesa'}</span>
-                  </>
+            <div className="flex items-center justify-between gap-2.5 pt-3 border-t border-border">
+              <div>
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isSubmitting || isDeleting}
+                    onClick={handleDelete}
+                    className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/15 border border-red-500/30 flex items-center gap-1.5"
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>Excluir</span>
+                  </Button>
                 )}
-              </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  disabled={isSubmitting || isDeleting}
+                  className="text-xs"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant={type === 'income' ? 'secondary' : 'neon'}
+                  size="sm"
+                  disabled={isSubmitting || isDeleting}
+                  className={`text-xs min-w-[150px] font-semibold ${
+                    type === 'income'
+                      ? 'bg-emerald-400 hover:bg-emerald-500 text-black border-transparent shadow-sm'
+                      : ''
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>{isEditing ? 'Atualizando...' : 'Gravando...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                      <span>
+                        {isEditing
+                          ? 'Salvar Alterações'
+                          : type === 'income'
+                          ? 'Salvar Receita'
+                          : 'Salvar Despesa'}
+                      </span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         )}

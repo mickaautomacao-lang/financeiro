@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Clock,
   QrCode,
+  Pencil,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ export function TransactionTable() {
     searchTerm,
     setSearchTerm,
     deleteTransaction,
+    openEditTransactionModal,
     toggleTransactionStatus,
     setIsNewTransactionModalOpen,
   } = useFinance();
@@ -328,13 +330,29 @@ export function TransactionTable() {
                   </td>
 
                   <td className="py-3.5 px-3 text-center">
-                    <button
-                      onClick={() => deleteTransaction(tx.id)}
-                      title="Excluir transação"
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-graphite-400 hover:text-expense hover:bg-expense/10 transition-all"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => openEditTransactionModal(tx)}
+                        title="Editar transação"
+                        className="p-1.5 rounded-lg text-graphite-400 hover:text-white hover:bg-graphite-800 transition-all"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const ok = window.confirm(
+                            `Deseja realmente excluir a transação "${tx.description}"?`
+                          );
+                          if (ok) await deleteTransaction(tx.id);
+                        }}
+                        title="Excluir transação"
+                        className="p-1.5 rounded-lg text-graphite-400 hover:text-expense hover:bg-expense/10 transition-all"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

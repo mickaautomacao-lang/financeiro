@@ -112,7 +112,19 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, status, amount, description, date, payment_method, pix_key, payment_info, category_id } = body;
+    const {
+      id,
+      status,
+      amount,
+      description,
+      date,
+      payment_method,
+      pix_key,
+      payment_info,
+      category_id,
+      type,
+      entry_subtype,
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -125,6 +137,8 @@ export async function PATCH(req: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
+    if (type !== undefined) updates.type = type;
+    if (entry_subtype !== undefined) updates.entry_subtype = entry_subtype;
     if (status !== undefined) updates.status = status;
     if (description !== undefined) updates.description = String(description).trim();
     if (date !== undefined) updates.date = date;

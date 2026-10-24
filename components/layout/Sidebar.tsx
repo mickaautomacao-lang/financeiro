@@ -14,6 +14,7 @@ import {
   Zap,
   ShieldCheck,
   X,
+  Receipt,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -37,9 +38,10 @@ export function Sidebar() {
 
   const navItems = [
     { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { label: 'Analytics', href: '/analytics', icon: LineChart },
+    { label: 'Despesas do Mês', href: '/expenses', icon: Receipt },
     { label: 'Transações', href: '/transactions', icon: ArrowLeftRight, badge: 'Auto' },
     { label: 'Orçamentos', href: '/budgets', icon: PieChart },
+    { label: 'Analytics', href: '/analytics', icon: LineChart },
     { label: 'Metas & Reserva', href: '/goals', icon: Target },
     {
       label: 'Dívidas & Contas',

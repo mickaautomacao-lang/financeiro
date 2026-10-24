@@ -16,6 +16,7 @@ import {
   Layers,
   ArrowUpRight,
   ArrowDownLeft,
+  Pencil,
 } from 'lucide-react';
 import { formatCurrency, formatDateBR } from '@/lib/utils';
 import { useFinance } from '@/context/FinanceContext';
@@ -36,6 +37,7 @@ export function CategoryTransactionsModal({
   const {
     transactions,
     deleteTransaction,
+    openEditTransactionModal,
     toggleTransactionStatus,
     setIsNewTransactionModalOpen,
   } = useFinance();
@@ -383,19 +385,32 @@ export function CategoryTransactionsModal({
                       {formatCurrency(Number(tx.amount))}
                     </span>
 
-                    {/* Excluir Transação */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm(`Excluir compra "${tx.description}"?`)) {
-                          deleteTransaction(tx.id);
-                        }
-                      }}
-                      className="p-1 rounded text-graphite-500 hover:text-expense hover:bg-expense/10 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Excluir lançamento"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Ações: Editar e Excluir */}
+                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          openEditTransactionModal(tx);
+                        }}
+                        className="p-1 rounded text-graphite-400 hover:text-white hover:bg-graphite-800 transition-colors"
+                        title="Editar lançamento"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`Excluir compra "${tx.description}"?`)) {
+                            deleteTransaction(tx.id);
+                          }
+                        }}
+                        className="p-1 rounded text-graphite-400 hover:text-expense hover:bg-expense/10 transition-colors"
+                        title="Excluir lançamento"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -422,3 +437,4 @@ export function CategoryTransactionsModal({
     </div>
   );
 }
+

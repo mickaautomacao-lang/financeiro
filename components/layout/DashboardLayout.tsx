@@ -18,6 +18,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const {
     isNewTransactionModalOpen,
     setIsNewTransactionModalOpen,
+    transactionToEdit,
+    setTransactionToEdit,
     isCategoryModalOpen,
     setIsCategoryModalOpen,
     categoryToEdit,
@@ -51,10 +53,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Modal Interativo de Nova Transação */}
+      {/* Modal Interativo de Nova / Editar Transação */}
       <NewTransactionModal
         isOpen={isNewTransactionModalOpen}
-        onClose={() => setIsNewTransactionModalOpen(false)}
+        onClose={() => {
+          setIsNewTransactionModalOpen(false);
+          setTransactionToEdit(null);
+        }}
+        transactionToEdit={transactionToEdit}
         categories={categories}
         onSuccess={refreshData}
       />

@@ -39,6 +39,10 @@ interface FinanceContextType {
   setSearchTerm: (term: string) => void;
   isNewTransactionModalOpen: boolean;
   setIsNewTransactionModalOpen: (open: boolean) => void;
+  transactionToEdit: Transaction | null;
+  setTransactionToEdit: (tx: Transaction | null) => void;
+  openNewTransactionModal: (tx?: Transaction | null) => void;
+  openEditTransactionModal: (tx: Transaction) => void;
   isCategoryModalOpen: boolean;
   setIsCategoryModalOpen: (open: boolean) => void;
   categoryToEdit: Category | null;
@@ -94,6 +98,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [selectedPeriod, setSelectedPeriod] = useState('current_month');
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState(false);
+  const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState(false);
@@ -104,6 +109,16 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     useState<Category | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+
+  const openNewTransactionModal = (tx?: Transaction | null) => {
+    setTransactionToEdit(tx || null);
+    setIsNewTransactionModalOpen(true);
+  };
+
+  const openEditTransactionModal = (tx: Transaction) => {
+    setTransactionToEdit(tx);
+    setIsNewTransactionModalOpen(true);
+  };
 
   const openCategoryModal = (cat?: Category | null) => {
     setCategoryToEdit(cat || null);
@@ -235,6 +250,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setSearchTerm,
         isNewTransactionModalOpen,
         setIsNewTransactionModalOpen,
+        transactionToEdit,
+        setTransactionToEdit,
+        openNewTransactionModal,
+        openEditTransactionModal,
         isCategoryModalOpen,
         setIsCategoryModalOpen,
         categoryToEdit,
