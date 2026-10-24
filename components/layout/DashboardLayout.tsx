@@ -8,6 +8,7 @@ import { FinanceProvider, useFinance } from '@/context/FinanceContext';
 import { NewTransactionModal } from '@/components/dashboard/NewTransactionModal';
 import { CategoryModal } from '@/components/dashboard/CategoryModal';
 import { CategoryInstallmentsModal } from '@/components/dashboard/CategoryInstallmentsModal';
+import { CategoryTransactionsModal } from '@/components/dashboard/CategoryTransactionsModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     isInstallmentsModalOpen,
     setIsInstallmentsModalOpen,
     selectedCategoryForInstallments,
+    isCategoryTransactionsModalOpen,
+    setIsCategoryTransactionsModalOpen,
+    selectedCategoryForTransactions,
     refreshData,
   } = useFinance();
 
@@ -68,6 +72,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         isOpen={isInstallmentsModalOpen}
         onClose={() => setIsInstallmentsModalOpen(false)}
         category={selectedCategoryForInstallments}
+      />
+
+      {/* Modal de Extrato & Compras Detalhadas da Categoria (Ex: Feira, Mercado, Contas) */}
+      <CategoryTransactionsModal
+        isOpen={isCategoryTransactionsModalOpen}
+        onClose={() => setIsCategoryTransactionsModalOpen(false)}
+        category={selectedCategoryForTransactions}
       />
     </div>
   );

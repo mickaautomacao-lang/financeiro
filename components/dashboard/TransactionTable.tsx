@@ -12,6 +12,9 @@ import {
   ArrowUpRight,
   Trash2,
   Plus,
+  CheckCircle2,
+  Clock,
+  QrCode,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,8 +33,11 @@ export function TransactionTable() {
     searchTerm,
     setSearchTerm,
     deleteTransaction,
+    toggleTransactionStatus,
     setIsNewTransactionModalOpen,
   } = useFinance();
+
+  const [updatingTxId, setUpdatingTxId] = useState<string | null>(null);
 
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [sortField, setSortField] = useState<SortField>('date');
@@ -232,9 +238,19 @@ export function TransactionTable() {
                         <p className="font-medium text-white group-hover:text-neon transition-colors">
                           {tx.description}
                         </p>
-                        <p className="text-[11px] text-graphite-400">
-                          {tx.payment_method || 'Pix'}
-                        </p>
+                        <div className="flex items-center gap-1.5 text-[11px] text-graphite-400 flex-wrap">
+                          <span>{tx.payment_method || 'Pix'}</span>
+                          {tx.pix_key && (
+                            <span className="text-[10px] text-purple-300 bg-purple-500/15 px-1.5 py-0.2 rounded border border-purple-500/30 font-mono">
+                              Pix: {tx.pix_key}
+                            </span>
+                          )}
+                          {tx.payment_info && (
+                            <span className="text-[10px] text-blue-300 bg-blue-500/15 px-1.5 py-0.2 rounded border border-blue-500/30">
+                              {tx.payment_info}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -268,22 +284,37 @@ export function TransactionTable() {
                   </td>
 
                   <td className="py-3.5 px-4">
-                    <Badge
-                      variant={
-                        tx.status === 'completed'
-                          ? 'success'
-                          : tx.status === 'pending'
-                          ? 'warning'
-                          : 'danger'
-                      }
-                      className="text-[10px] capitalize"
-                    >
-                      {tx.status === 'completed'
-                        ? 'Concluído'
-                        : tx.status === 'pending'
-                        ? 'Pendente'
-                        : 'Cancelado'}
-                    </Badge>
+                    {tx.status === 'pending' ? (
+                      <button
+                        type="button"
+                        disabled={updatingTxId === tx.id}
+                        onClick={async () => {
+                          setUpdatingTxId(tx.id);
+                          await toggleTransactionStatus(tx.id, 'completed');
+                          setUpdatingTxId(null);
+                        }}
+                        title="Clique para confirmar pagamento / saída"
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 shadow-sm transition-all flex items-center gap-1 animate-pulse"
+                      >
+                        <Clock className="w-3 h-3 text-amber-400" />
+                        <span>Confirmar Saída</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={updatingTxId === tx.id}
+                        onClick={async () => {
+                          setUpdatingTxId(tx.id);
+                          await toggleTransactionStatus(tx.id, 'pending');
+                          setUpdatingTxId(null);
+                        }}
+                        title="Clique para alternar para Pendente"
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all flex items-center gap-1"
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        <span>Pago</span>
+                      </button>
+                    )}
                   </td>
 
                   <td className="py-3.5 px-5 text-right font-mono font-semibold">

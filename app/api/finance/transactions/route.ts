@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
       entry_subtype = 'variable',
       installments_count = 1,
       installment_number = 1,
+      pix_key = null,
+      payment_info = null,
     } = body;
 
     if (!amount || !type || !description) {
@@ -77,6 +79,8 @@ export async function POST(req: NextRequest) {
         entry_subtype: entry_subtype || 'variable',
         installments_count: parseInt(String(installments_count)) || 1,
         installment_number: parseInt(String(installment_number)) || 1,
+        pix_key: pix_key ? String(pix_key).trim() : null,
+        payment_info: payment_info ? String(payment_info).trim() : null,
       })
       .select(`
         *,
@@ -100,6 +104,68 @@ export async function POST(req: NextRequest) {
     console.error('[Transactions API Exception]:', error);
     return NextResponse.json(
       { error: 'Erro interno ao processar transação' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, status, amount, description, date, payment_method, pix_key, payment_info, category_id } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID da transação é obrigatório para atualização' },
+        { status: 400 }
+      );
+    }
+
+    const updates: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (status !== undefined) updates.status = status;
+    if (description !== undefined) updates.description = String(description).trim();
+    if (date !== undefined) updates.date = date;
+    if (payment_method !== undefined) updates.payment_method = payment_method;
+    if (pix_key !== undefined) updates.pix_key = pix_key ? String(pix_key).trim() : null;
+    if (payment_info !== undefined) updates.payment_info = payment_info ? String(payment_info).trim() : null;
+    if (category_id !== undefined) updates.category_id = category_id || null;
+
+    if (amount !== undefined) {
+      const numericAmount = parseFloat(String(amount).replace(',', '.'));
+      if (!isNaN(numericAmount) && numericAmount > 0) {
+        updates.amount = numericAmount;
+      }
+    }
+
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from('transactions')
+      .update(updates)
+      .eq('id', id)
+      .select(`
+        *,
+        category:categories(name, color, icon)
+      `)
+      .single();
+
+    if (updateError) {
+      console.error('[Transactions PATCH Error]:', updateError);
+      return NextResponse.json(
+        { error: 'Erro ao atualizar transação', details: updateError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      transaction: updated,
+    });
+  } catch (error) {
+    console.error('[Transactions PATCH Exception]:', error);
+    return NextResponse.json(
+      { error: 'Erro interno ao atualizar transação' },
       { status: 500 }
     );
   }

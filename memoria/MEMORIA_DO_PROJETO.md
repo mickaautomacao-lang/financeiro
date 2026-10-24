@@ -169,6 +169,15 @@ c:\Finanças\
   - Implementação de laço com auto-retry e intervalo de 800ms em requisições de formulários (`fetch`), mitigando erros transitórios de rede (`Failed to fetch`) causados por reciclagem de serverless functions durante rollouts de deploy.
   - Mensagens amigáveis e explicativas em caso de instabilidade na conexão, eliminando telas travadas para o usuário final.
 
+> **Data:** 24/10/2026
+
+- **Gestão Ágil de Saídas Diárias & Fracionamento de Tetos Orçamentários:**
+  - **Atalhos Rápidos de 1 Clique:** No `NewTransactionModal`, introduzidos chips contextuais para despesas frequentes (`🛒 Supermercado`, `🥬 Feira Livre`, `⛽ Combustível`, `🍔 Delivery`, `💊 Farmácia`, `🏫 Escola`, `⚡ Luz/Energia`). Com um clique, preenche categoria, descrição e dados de pagamento.
+  - **Botão de Confirmação de Saída / Pagamento Instantâneo:** Despesas registradas com status `pending` (a pagar) exibem o botão direto `[ Confirmar Saída ]` tanto na tabela principal de lançamentos quanto no extrato da categoria. Ao clicar, o status alterna para `completed` em tempo real sem exigir abertura de modais ou edição manual.
+  - **Integração de Chave Pix & Dados Bancários:** Adicionadas colunas `pix_key` e `payment_info` nas tabelas `categories` e `transactions` do Supabase. Categorias como Escola, Luz ou Feira podem armazenar uma Chave Pix padrão, com botão `Copiar Pix` e auto-preenchimento nos novos lançamentos.
+  - **Extrato Detalhado de Compras por Categoria (Ex: Feira R$ 2.000):** O novo componente `CategoryTransactionsModal` permite rastrear compras parciais dentro do teto mensal estabelecido (ex: compras de R$ 150, R$ 200, R$ 350). Apresenta a lista discriminada com datas, forma de pagamento, valor, saldo restante do teto e botões de confirmação rápida de saída.
+
+
 ---
 
 

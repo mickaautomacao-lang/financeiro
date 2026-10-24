@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, budget_limit, color, icon, category_type, category_nature, due_day, closing_day } = body;
+    const { name, budget_limit, color, icon, category_type, category_nature, due_day, closing_day, pix_key, payment_info } = body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
@@ -49,6 +49,8 @@ export async function POST(request: Request) {
         category_nature: category_nature || 'expense',
         due_day: dueDayNum,
         closing_day: closingDayNum,
+        pix_key: pix_key ? String(pix_key).trim() : null,
+        payment_info: payment_info ? String(payment_info).trim() : null,
       })
       .select()
       .single();
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, budget_limit, color, icon, category_type, category_nature, due_day, closing_day } = body;
+    const { id, name, budget_limit, color, icon, category_type, category_nature, due_day, closing_day, pix_key, payment_info } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -99,6 +101,12 @@ export async function PUT(request: Request) {
     }
     if (closing_day !== undefined) {
       updates.closing_day = closing_day ? parseInt(String(closing_day)) : null;
+    }
+    if (pix_key !== undefined) {
+      updates.pix_key = pix_key ? String(pix_key).trim() : null;
+    }
+    if (payment_info !== undefined) {
+      updates.payment_info = payment_info ? String(payment_info).trim() : null;
     }
 
     const { data, error } = await supabaseAdmin

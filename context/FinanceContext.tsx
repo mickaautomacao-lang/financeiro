@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type {
   Transaction,
+  TransactionStatus,
   Category,
   CategoryInstallment,
   Debt,
@@ -48,6 +49,11 @@ interface FinanceContextType {
   selectedCategoryForInstallments: Category | null;
   openInstallmentsModal: (category: Category) => void;
   payInstallment: (id: string) => Promise<boolean>;
+  selectedCategoryForTransactions: Category | null;
+  isCategoryTransactionsModalOpen: boolean;
+  setIsCategoryTransactionsModalOpen: (open: boolean) => void;
+  openCategoryTransactionsModal: (category: Category) => void;
+  toggleTransactionStatus: (id: string, newStatus: TransactionStatus) => Promise<boolean>;
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
   isNotificationDropdownOpen: boolean;
@@ -93,6 +99,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState(false);
   const [selectedCategoryForInstallments, setSelectedCategoryForInstallments] =
     useState<Category | null>(null);
+  const [isCategoryTransactionsModalOpen, setIsCategoryTransactionsModalOpen] = useState(false);
+  const [selectedCategoryForTransactions, setSelectedCategoryForTransactions] =
+    useState<Category | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
 
@@ -104,6 +113,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const openInstallmentsModal = (category: Category) => {
     setSelectedCategoryForInstallments(category);
     setIsInstallmentsModalOpen(true);
+  };
+
+  const openCategoryTransactionsModal = (category: Category) => {
+    setSelectedCategoryForTransactions(category);
+    setIsCategoryTransactionsModalOpen(true);
   };
 
   const fetchData = useCallback(
@@ -179,6 +193,27 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const toggleTransactionStatus = async (
+    id: string,
+    newStatus: TransactionStatus
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/finance/transactions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <FinanceContext.Provider
       value={{
@@ -210,6 +245,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         selectedCategoryForInstallments,
         openInstallmentsModal,
         payInstallment,
+        selectedCategoryForTransactions,
+        isCategoryTransactionsModalOpen,
+        setIsCategoryTransactionsModalOpen,
+        openCategoryTransactionsModal,
+        toggleTransactionStatus,
         isMobileMenuOpen,
         setIsMobileMenuOpen,
         isNotificationDropdownOpen,

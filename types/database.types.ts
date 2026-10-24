@@ -31,6 +31,8 @@ export interface Database {
           category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
           closing_day?: number | null;
+          pix_key?: string | null;
+          payment_info?: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -45,6 +47,8 @@ export interface Database {
           category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
           closing_day?: number | null;
+          pix_key?: string | null;
+          payment_info?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -59,6 +63,8 @@ export interface Database {
           category_nature?: 'expense' | 'income' | 'both';
           due_day?: number | null;
           closing_day?: number | null;
+          pix_key?: string | null;
+          payment_info?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -86,6 +92,8 @@ export interface Database {
           entry_subtype?: string | null;
           installments_count?: number | null;
           installment_number?: number | null;
+          pix_key?: string | null;
+          payment_info?: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -103,6 +111,8 @@ export interface Database {
           entry_subtype?: string | null;
           installments_count?: number | null;
           installment_number?: number | null;
+          pix_key?: string | null;
+          payment_info?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -120,6 +130,8 @@ export interface Database {
           entry_subtype?: string | null;
           installments_count?: number | null;
           installment_number?: number | null;
+          pix_key?: string | null;
+          payment_info?: string | null;
           created_at?: string;
           updated_at?: string;
         };

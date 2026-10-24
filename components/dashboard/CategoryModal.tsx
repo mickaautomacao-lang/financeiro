@@ -21,6 +21,7 @@ import {
   CreditCard,
   Repeat,
   Calendar,
+  QrCode,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { Category } from '@/types/database.types';
@@ -77,6 +78,8 @@ export function CategoryModal({
   const [categoryType, setCategoryType] = useState<'variable' | 'fixed' | 'credit_card'>('variable');
   const [dueDay, setDueDay] = useState('10');
   const [closingDay, setClosingDay] = useState('5');
+  const [pixKey, setPixKey] = useState('');
+  const [paymentInfo, setPaymentInfo] = useState('');
   const [autoLaunchMonth, setAutoLaunchMonth] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -94,6 +97,8 @@ export function CategoryModal({
       setCategoryType(categoryToEdit.category_type || 'variable');
       setDueDay(categoryToEdit.due_day ? String(categoryToEdit.due_day) : '10');
       setClosingDay(categoryToEdit.closing_day ? String(categoryToEdit.closing_day) : '5');
+      setPixKey(categoryToEdit.pix_key || '');
+      setPaymentInfo(categoryToEdit.payment_info || '');
       setAutoLaunchMonth(false);
     } else {
       setCategoryNature('expense');
@@ -104,6 +109,8 @@ export function CategoryModal({
       setCategoryType('variable');
       setDueDay('10');
       setClosingDay('5');
+      setPixKey('');
+      setPaymentInfo('');
       setAutoLaunchMonth(true);
     }
     setError(null);
@@ -145,6 +152,8 @@ export function CategoryModal({
             category_nature: categoryNature,
             due_day: numericDueDay,
             closing_day: categoryNature === 'income' ? null : numericClosingDay,
+            pix_key: pixKey ? pixKey.trim() : null,
+            payment_info: paymentInfo ? paymentInfo.trim() : null,
           }
         : {
             name: name.trim(),
@@ -155,6 +164,8 @@ export function CategoryModal({
             category_nature: categoryNature,
             due_day: numericDueDay,
             closing_day: categoryNature === 'income' ? null : numericClosingDay,
+            pix_key: pixKey ? pixKey.trim() : null,
+            payment_info: paymentInfo ? paymentInfo.trim() : null,
           };
 
       let res: Response | null = null;
@@ -716,6 +727,43 @@ export function CategoryModal({
               </p>
             </div>
           )}
+
+          {/* Dados Opcionais de Pagamento: Chave Pix ou Conta */}
+          <div className="p-3.5 bg-graphite-900/60 border border-border/80 rounded-xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-graphite-200 flex items-center gap-1.5">
+                <QrCode className="w-3.5 h-3.5 text-purple-400" />
+                Chave Pix ou Dados de Pagamento da Conta (Opcional)
+              </label>
+              <span className="text-[10px] text-graphite-400">Facilita ao pagar</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] text-graphite-400 mb-1">
+                  Chave Pix Padrão
+                </label>
+                <input
+                  type="text"
+                  value={pixKey}
+                  onChange={(e) => setPixKey(e.target.value)}
+                  placeholder="CPF, Telefone, E-mail..."
+                  className="w-full px-3 py-1.5 bg-graphite-900 border border-border rounded-lg text-xs text-white placeholder-graphite-500 font-mono focus:border-neon focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] text-graphite-400 mb-1">
+                  Dados da Conta / Banco
+                </label>
+                <input
+                  type="text"
+                  value={paymentInfo}
+                  onChange={(e) => setPaymentInfo(e.target.value)}
+                  placeholder="Banco, Agência, Conta..."
+                  className="w-full px-3 py-1.5 bg-graphite-900 border border-border rounded-lg text-xs text-white placeholder-graphite-500 font-mono focus:border-neon focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Seletor de Cores */}
           <div>

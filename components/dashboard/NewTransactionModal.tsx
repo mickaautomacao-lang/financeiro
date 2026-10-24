@@ -17,6 +17,8 @@ import {
   Repeat,
   ShoppingBag,
   Layers,
+  QrCode,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +48,8 @@ export function NewTransactionModal({
   const [customCategory, setCustomCategory] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState('Pix');
+  const [pixKey, setPixKey] = useState('');
+  const [paymentInfo, setPaymentInfo] = useState('');
   const [status, setStatus] = useState<TransactionStatus>('completed');
   
   // Controle de parcelamento para compras no cartão
@@ -125,6 +129,8 @@ export function NewTransactionModal({
         category_name: customCategory.trim() || undefined,
         date,
         payment_method: paymentMethod,
+        pix_key: pixKey ? pixKey.trim() : undefined,
+        payment_info: paymentInfo ? paymentInfo.trim() : undefined,
         status,
         entry_subtype: entrySubtype,
         installments_count: isInstallment ? parseInt(totalInstallments) || 1 : 1,
@@ -170,6 +176,8 @@ export function NewTransactionModal({
         setDescription('');
         setCategoryId('');
         setCustomCategory('');
+        setPixKey('');
+        setPaymentInfo('');
         setIsInstallment(false);
         onSuccess();
         onClose();
@@ -405,6 +413,51 @@ export function NewTransactionModal({
               )}
             </div>
 
+            {/* Atalhos Rápidos para Despesas (ex: Supermercado 200) */}
+            {type === 'expense' && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-medium text-graphite-400">
+                    Atalhos Rápidos de Gastos:
+                  </span>
+                  <span className="text-[10px] text-graphite-500">1-clique para preencher</span>
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                  {[
+                    { label: 'Supermercado', icon: '🛒', catKw: 'alimenta' },
+                    { label: 'Feira Livre', icon: '🥬', catKw: 'alimenta' },
+                    { label: 'Combustível', icon: '⛽', catKw: 'transporte' },
+                    { label: 'Delivery / Lanche', icon: '🍔', catKw: 'alimenta' },
+                    { label: 'Farmácia', icon: '💊', catKw: 'saúde' },
+                    { label: 'Escola', icon: '🏫', catKw: 'escola' },
+                    { label: 'Luz / Energia', icon: '⚡', catKw: 'casa' },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        setDescription(preset.label);
+                        const target = filteredCategories.find(
+                          (c) =>
+                            c.name.toLowerCase().includes(preset.catKw) ||
+                            c.name.toLowerCase().includes(preset.label.toLowerCase())
+                        );
+                        if (target) {
+                          setCategoryId(target.id);
+                          if (target.category_type) setEntrySubtype(target.category_type);
+                          if (target.pix_key) setPixKey(target.pix_key);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-graphite-900 border border-border/80 text-graphite-300 hover:text-white hover:border-graphite-600 transition-all text-xs whitespace-nowrap flex items-center gap-1 shrink-0"
+                    >
+                      <span>{preset.icon}</span>
+                      <span>{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 3. Valor */}
             <div>
               <label className="text-xs font-medium text-graphite-300 block mb-1">
@@ -464,6 +517,12 @@ export function NewTransactionModal({
                     setCustomCategory('');
                     const foundCat = categories.find((c) => c.id === selectedId);
                     if (foundCat) {
+                      if (foundCat.pix_key && !pixKey) {
+                        setPixKey(foundCat.pix_key);
+                      }
+                      if (foundCat.payment_info && !paymentInfo) {
+                        setPaymentInfo(foundCat.payment_info);
+                      }
                       if (type === 'income' && foundCat.category_type === 'fixed') {
                         setEntrySubtype('fixed');
                         if (!description) setDescription(foundCat.name);
@@ -580,35 +639,102 @@ export function NewTransactionModal({
                   <option value="Cartão de Crédito">Cartão de Crédito</option>
                   <option value="Cartão de Débito">Cartão de Débito</option>
                   <option value="Boleto">Boleto</option>
-                  <option value="TED / Transferência">TED / Transferência</option>
+                  <option value="TED / Transferência">TED / Transferência / Conta</option>
                   <option value="Dinheiro">Dinheiro</option>
                 </select>
               </div>
             </div>
 
-            {/* 7. Status */}
-            <div className="flex items-center gap-4 pt-1 text-xs">
-              <span className="text-graphite-400">Status:</span>
-              <label className="flex items-center gap-1.5 cursor-pointer text-graphite-200">
-                <input
-                  type="radio"
-                  name="status"
-                  checked={status === 'completed'}
-                  onChange={() => setStatus('completed')}
-                  className="accent-neon"
+            {/* Campo Opcional: Chave Pix ou Dados de Conta / Favorecido */}
+            {paymentMethod === 'Pix' && (
+              <div className="p-3 bg-purple-500/10 border border-purple-500/25 rounded-xl space-y-1.5 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-purple-300 flex items-center gap-1.5">
+                    <QrCode className="w-3.5 h-3.5 text-purple-400" />
+                    Chave Pix do Recebedor / Conta (Opcional)
+                  </label>
+                  <span className="text-[10px] text-graphite-400">Salva no comprovante</span>
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Ex: CPF, CNPJ, Celular, E-mail ou Chave Aleatória..."
+                  value={pixKey}
+                  onChange={(e) => setPixKey(e.target.value)}
+                  className="text-xs bg-graphite-900 border-border text-white placeholder-graphite-500 font-mono"
                 />
-                <span>Liquidado / Recebido</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-graphite-200">
-                <input
-                  type="radio"
-                  name="status"
-                  checked={status === 'pending'}
-                  onChange={() => setStatus('pending')}
-                  className="accent-amber-400"
+              </div>
+            )}
+
+            {(paymentMethod === 'TED / Transferência' || paymentMethod === 'Boleto') && (
+              <div className="p-3 bg-graphite-900/80 border border-border rounded-xl space-y-1.5 animate-in fade-in duration-150">
+                <label className="text-[11px] font-medium text-graphite-300 flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-blue-400" />
+                  Dados da Conta / Banco / Favorecido (Opcional)
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Ex: Nubank Ag 0001 Conta 12345-6 / Nome Favorecido..."
+                  value={paymentInfo}
+                  onChange={(e) => setPaymentInfo(e.target.value)}
+                  className="text-xs bg-graphite-900 border-border text-white placeholder-graphite-500 font-mono"
                 />
-                <span>Pendente</span>
+              </div>
+            )}
+
+            {/* 7. Situação / Status do Pagamento */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-medium text-graphite-300 block">
+                Situação da Transação:
               </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStatus('completed')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
+                    status === 'completed'
+                      ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-sm'
+                      : 'bg-graphite-900 border-border text-graphite-400 hover:text-white'
+                  }`}
+                >
+                  <CheckCircle2
+                    className={`w-4 h-4 ${
+                      status === 'completed' ? 'text-emerald-400' : 'text-graphite-500'
+                    }`}
+                  />
+                  <div>
+                    <span className="text-xs font-semibold block leading-tight">
+                      {type === 'income' ? 'Já Recebido' : 'Já Foi Pago'}
+                    </span>
+                    <span className="text-[10px] text-graphite-400">
+                      Liquidado no caixa
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStatus('pending')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
+                    status === 'pending'
+                      ? 'bg-amber-500/15 border-amber-500/40 text-white shadow-sm'
+                      : 'bg-graphite-900 border-border text-graphite-400 hover:text-white'
+                  }`}
+                >
+                  <Clock
+                    className={`w-4 h-4 ${
+                      status === 'pending' ? 'text-amber-400' : 'text-graphite-500'
+                    }`}
+                  />
+                  <div>
+                    <span className="text-xs font-semibold block leading-tight">
+                      {type === 'income' ? 'Pendente a Receber' : 'Pendente a Pagar'}
+                    </span>
+                    <span className="text-[10px] text-graphite-400">
+                      Confirmar depois
+                    </span>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Botões de Ação */}

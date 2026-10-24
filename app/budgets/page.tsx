@@ -17,6 +17,7 @@ import {
   ShoppingBag,
   ExternalLink,
   Check,
+  Receipt,
 } from 'lucide-react';
 import { useFinance } from '@/context/FinanceContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +33,7 @@ function BudgetsContent() {
     refreshData,
     openCategoryModal,
     openInstallmentsModal,
+    openCategoryTransactionsModal,
   } = useFinance();
   const [natureTab, setNatureTab] = useState<'expense' | 'income'>('expense');
   const [filterType, setFilterType] = useState<string>('all');
@@ -517,6 +519,15 @@ function BudgetsContent() {
                             <span>Salário deste mês lançado no caixa</span>
                           </div>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={() => openCategoryTransactionsModal(cat)}
+                          className="w-full mt-2 py-1.5 px-2.5 text-xs font-medium text-graphite-300 hover:text-emerald-300 bg-graphite-900/80 hover:bg-graphite-800 border border-border/80 hover:border-emerald-500/40 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Ver Entradas & Lançamentos</span>
+                        </button>
                       </div>
                     </div>
                   );
@@ -672,6 +683,16 @@ function BudgetsContent() {
                           <span>Gerenciar Parcelas ({catInstallments.length})</span>
                         </button>
                       )}
+
+                      {/* Botão para Extrato de Compras Detalhado (Ex: Compras da Feira, Mercado, Contas) */}
+                      <button
+                        type="button"
+                        onClick={() => openCategoryTransactionsModal(cat)}
+                        className="w-full mt-2 py-1.5 px-2.5 text-xs font-medium text-graphite-300 hover:text-white bg-graphite-900/80 hover:bg-graphite-800 border border-border/80 hover:border-neon/40 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Receipt className="w-3.5 h-3.5 text-neon" />
+                        <span>Extrato de Compras & Pagamentos</span>
+                      </button>
                     </div>
                   </div>
                 );
